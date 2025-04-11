@@ -1,0 +1,92 @@
+/* Внесите изменения в Index.module.css */
+
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-image: url('/images/repair-hero.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  color: white; /* Цвет текста для контраста */
+  padding: 20px;
+}
+
+.heroSection {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.title {
+  font-size: 2.5rem;
+  margin: 0;
+}
+
+.topLeft {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+}
+
+.mainContent {
+  text-align: center;
+}
+
+.buttonContainer {
+  margin-top: 20px;
+}
+
+.button {
+  margin: 10px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.buttonAdmin {
+  padding: 10px 20px;
+  background-color: #f0f0f0;
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+
+.userInfo {
+  font-size: 1.2rem;
+  color: white;
+}
+
+/* Логотип в левом нижнем углу */
+.logoContainer {
+  position: absolute;
+  bottom: 1px;
+  left: 10px;
+  padding: 10px;
+}
+
+.logo {
+  max-width: 200px; /* Ограничиваем размер логотипа */
+  height: auto;
+}
+
+/* Кнопка Администрирования в правом нижнем углу */
+.bottomRight {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+}
+.footer {
+  position: fixed;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.2rem;
+  color: #666;
+  z-index: 999;
+  text-align: center;
+}

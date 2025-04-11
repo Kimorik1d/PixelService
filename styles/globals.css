@@ -1,0 +1,182 @@
+/* styles/globals.css */
+
+/* Глобальные настройки для всей страницы */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Установка шрифта Helvetica */
+body {
+  font-family: 'Helvetica', sans-serif;
+  background-color: #121212; /* тёмный фон */
+  color: #e0e0e0; /* светлый текст */
+  line-height: 1.6;
+  font-size: 16px;
+  transition: background-color 0.3s ease, color 0.3s ease; /* плавное переключение */
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: bold;
+  color: #ffffff; /* Белые заголовки */
+}
+
+a {
+  color: #1e90ff; /* Синий цвет ссылок */
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Стили для таблиц */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 12px;
+  text-align: center;
+  border: 1px solid #333333; /* Тёмные границы */
+}
+
+th {
+  background-color: #444444; /* Тёмный фон для заголовков таблиц */
+  color: #ffffff;
+}
+
+td {
+  background-color: #333333; /* Ещё более тёмный фон для ячеек */
+  color: #e0e0e0;
+}
+
+tr:nth-child(even) td {
+  background-color: #2a2a2a; /* Чередование цветов строк для удобства чтения */
+}
+
+tr:hover td {
+  background-color: #3d3d3d; /* Подсветка строки при наведении */
+}
+
+/* Стили для кнопок */
+button {
+  background-color: #444444;
+  color: #e0e0e0;
+  border: 2px solid #333333;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+button:hover {
+  background-color: #555555; /* Светлее фон при наведении */
+}
+
+button:disabled {
+  background-color: #222222;
+  cursor: not-allowed;
+}
+
+button.primary {
+  background-color: #1e90ff;
+  border: 2px solid #1c86ee;
+  color: #ffffff;
+}
+
+button.primary:hover {
+  background-color: #1c86ee;
+}
+
+button.secondary {
+  background-color: #555555;
+  border: 2px solid #444444;
+}
+
+button.secondary:hover {
+  background-color: #666666;
+}
+
+/* Стили для форм и ввода */
+input,
+select,
+textarea {
+  background-color: #333333;
+  color: #e0e0e0;
+  border: 1px solid #444444;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #1e90ff; /* Цвет фокуса для полей ввода */
+}
+
+label {
+  color: #e0e0e0;
+  font-size: 14px;
+  margin-bottom: 5px;
+  display: block;
+}
+
+/* Стили для фильтров */
+select {
+  background-color: #333333;
+  border: 1px solid #444444;
+  color: #e0e0e0;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+select:focus {
+  outline: none;
+  border-color: #1e90ff;
+}
+
+/* Заголовки и секции */
+h1, h2 {
+  margin-bottom: 15px;
+}
+
+h1 {
+  font-size: 2rem;
+  color: #ffffff;
+}
+
+h2 {
+  font-size: 1.5rem;
+  color: #ffffff;
+}
+
+.tableSection {
+  margin-bottom: 30px;
+}
+
+.tableTitle {
+  font-size: 1.2rem;
+  margin-bottom: 15px;
+  color: #ffffff;
+}
+
+/* Уведомления и сообщения */
+.error-message {
+  color: #ff4d4d;
+  background-color: #330000;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.success-message {
+  color: #28a745;
+  background-color: #004d00;
+  padding: 10px;
+  border-radius: 5px;
+}
