@@ -24,13 +24,13 @@
 }
 
 .table {
+  table-layout: fixed;
   width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
 }
 
+
 .table th, .table td {
-  padding: 12px;
+  padding: 5px;
   text-align: center;
   border: 1px solid #555;
 }
@@ -100,4 +100,18 @@
   align-items: center;
   gap: 15px;
   margin-bottom: 15px;
+}
+.tabButton {
+  background-color: #131313;
+  border: 1px solid #ccc;
+  margin: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.activeTab {
+  background-color: #0056b3;
+  color: white;
+  font-weight: bold;
 }

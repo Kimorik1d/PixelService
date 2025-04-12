@@ -2,59 +2,29 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import styles from '../styles/RepairsAdmin.module.css';
 import { useRouter } from 'next/router';
-import { useUser } from '../context/UserContext';
 
 export default function RepairsAdmin() {
-  const { user } = useUser();
-  const router = useRouter();
-
   const [repairs, setRepairs] = useState([]);
-  const [addressOptions] = useState([
-    "Мартынова",
-    "Мира",
-    "Полигон",
-    "Алексеева",
-    "9 мая",
-    "Лесников",
-    "Киренского",
-    "Карамзина"
-  ]);
-  const [selectedStatus, setSelectedStatus] = useState('');
+  const [activeTab, setActiveTab] = useState('Неисправно');
+  const router = useRouter();
   const [selectedAddress, setSelectedAddress] = useState('');
-  const [sortOrder, setSortOrder] = useState('desc');
-  const [hideClosed, setHideClosed] = useState(true);
 
-  useEffect(() => {
-    if (!isUserReady) return;
+  const addressTabs = [
+    'Киренского', 'Карамзина', 'Лесников', 'Мира',
+    'Мартынова', 'Алексеева', 'Полигон', '9 мая'
+  ];
 
-    if (!user || user.role !== 'admin') {
-      router.replace('/');
-    } else {
-      fetchRepairs();
-    }
-  }, [user]);
-
-    const [isUserReady, setIsUserReady] = useState(false);
-
-  useEffect(() => {
-    if (user !== undefined) {
-      setIsUserReady(true);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (!isUserReady) return;
-
-    if (!user || user.role !== 'admin') {
-      router.replace('/');
-    } else {
-      fetchRepairs();
-    }
-  }, [isUserReady, user]);
-
+  const statusTabs = [
+    { label: 'Неисправно', value: 'Неисправно' },
+    { label: 'Отправка', value: 'Отправка' },
+    { label: 'Ремонт', value: 'В ремонте' },
+    { label: 'История', value: 'Закрыт' },
+  ];
 
   const fetchRepairs = async () => {
-    const { data, error } = await supabase.from('repairs').select('*');
+    const { data, error } = await supabase
+      .from('repairs')
+      .select('id, club_address, description, pc_number, equipment_type, model, status, created_at, closed_at, sent_at');
     if (error) {
       console.error('Ошибка при загрузке заявок:', error);
     } else {
@@ -62,23 +32,32 @@ export default function RepairsAdmin() {
     }
   };
 
-  const filteredRepairs = repairs
-    .filter(repair => {
-      const statusMatch = selectedStatus ? repair.status === selectedStatus : true;
-      const closedMatch = hideClosed ? repair.status !== 'Закрыт' : true;
-      const addressMatch = selectedAddress ? repair.club_address === selectedAddress : true;
-      return statusMatch && addressMatch && closedMatch;
-    })
-    .sort((a, b) => {
-      const dateA = new Date(a.created_at);
-      const dateB = new Date(b.created_at);
-      return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
-    });
+  useEffect(() => {
+    fetchRepairs();
+  }, []);
+
+  const filteredRepairs = repairs.filter((repair) => {
+    const matchesStatus = (activeTab === 'Неисправно')
+      ? repair.status === 'Неисправно'
+      : (activeTab === 'Отправка')
+      ? repair.status === 'На отправке' || repair.status === 'У курьера'
+      : repair.status === activeTab;
+
+    const matchesAddress = selectedAddress ? repair.club_address === selectedAddress : true;
+
+    return matchesStatus && matchesAddress;
+  });
 
   const handleStatusChange = async (repairId, newStatus) => {
+    const updateData = { status: newStatus };
+
+    if (newStatus === 'В ремонте') {
+      updateData.sent_at = new Date().toISOString();
+    }
+
     const { error } = await supabase
       .from('repairs')
-      .update({ status: newStatus })
+      .update(updateData)
       .eq('id', repairId);
 
     if (error) {
@@ -86,117 +65,116 @@ export default function RepairsAdmin() {
     } else {
       setRepairs((prevRepairs) =>
         prevRepairs.map((repair) =>
-          repair.id === repairId ? { ...repair, status: newStatus } : repair
+          repair.id === repairId ? { ...repair, ...updateData } : repair
         )
       );
     }
   };
 
-  const renderStatusBadge = (status) => {
-    const statusClass =
-      status === 'Ожидает'
-        ? styles.statusPending
-        : status === 'У курьера'
-        ? styles.statusCourier
-        : status === 'В ремонте'
-        ? styles.statusInRepair
-        : styles.statusClosed;
+  const showClosedAt = activeTab === 'Закрыт';
+  const showSentAtColumn = activeTab === 'В ремонте' || activeTab === 'Закрыт';
 
-    return <span className={`${styles.statusBadge} ${statusClass}`}>{status}</span>;
+  const renderTableHeader = () => {
+  return (
+    <tr>
+      <th style={{ width: '5px' }}>ID</th>
+      <th style={{ width: '20px' }}>Клуб</th>
+      <th style={{ width: '5px' }}>ПК №</th>
+      <th style={{ width: '25px' }}>Тип</th>
+      <th style={{ width: '25px' }}>Модель</th>
+      <th style={{ width: '80px' }}>Описание</th>
+      <th style={{ width: '20px' }}>Создана</th>
+      {showSentAtColumn && <th style={{ width: '20px' }}>Отправлена</th>}
+      {showClosedAt && <th style={{ width: '20px' }}>Закрыта</th>}
+      <th style={{ width: '15px' }}>Статус</th>
+    </tr>
+  );
+};
+
+  const renderTableRow = (repair) => {
+    const tdStyle = [
+      { width: '20px' }, // ID
+      { width: '40px' }, // Club
+      { width: '20px' }, // PC Number
+      { width: '30px' }, // Type
+      { width: '30px' }, // Model
+      { width: '100px' }, // Description
+      { width: '30px' }, // Created
+      { width: '30px' }, // Status
+    ];
+
+    return (
+      <tr key={repair.id}>
+        <td style={tdStyle[0]}>{repair.id}</td>
+        <td style={tdStyle[1]}>{repair.club_address}</td>
+        <td style={tdStyle[2]}>{repair.pc_number}</td>
+        <td style={tdStyle[3]}>{repair.equipment_type}</td>
+        <td style={tdStyle[4]}>{repair.model}</td>
+        <td style={tdStyle[5]}>{repair.description}</td>
+        <td style={tdStyle[6]}>{(() => { const d = new Date(repair.created_at); d.setHours(d.getHours() + 7); return d.toLocaleString('ru-RU', { hour: '2-digit', minute: '2-digit', year: 'numeric', month: '2-digit', day: '2-digit' }); })()}</td>
+        {showSentAtColumn && (
+          <td>{repair.sent_at ? (() => { const d = new Date(repair.sent_at); d.setHours(d.getHours() + 7); return d.toLocaleString('ru-RU', { hour: '2-digit', minute: '2-digit', year: 'numeric', month: '2-digit', day: '2-digit' }); })() : ''}</td>
+        )}
+        {showClosedAt && (
+          <td>{repair.closed_at ? (() => { const d = new Date(repair.closed_at); d.setHours(d.getHours() + 7); return d.toLocaleString('ru-RU', { hour: '2-digit', minute: '2-digit', year: 'numeric', month: '2-digit', day: '2-digit' }); })() : ''}</td>
+        )}
+        <td style={tdStyle[7]}>
+          <select
+            value={repair.status}
+            onChange={(e) => handleStatusChange(repair.id, e.target.value)}
+          >
+            <option value="Неисправно">Неисправно</option>
+            <option value="На отправке">На отправке</option>
+            <option value="У курьера">У курьера</option>
+            <option value="В ремонте">В ремонте</option>
+            <option value="Закрыт">Закрыт</option>
+          </select>
+        </td>
+      </tr>
+    );
   };
-
-  if (!user || user.role !== 'admin') return null;
 
   return (
     <div className={styles.container}>
-      <h1>Администрирование заявок</h1>
+      <h1 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <span>Администрирование заявок</span>
+        <div className={styles.indicators} style={{ textAlign: 'right' }}>
+          <p>Неисправно: {repairs.filter(r => r.status === 'Неисправно' && (!selectedAddress || r.club_address === selectedAddress)).length}</p>
+          <p>На отправке: {repairs.filter(r => (r.status === 'На отправке' || r.status === 'У курьера') && (!selectedAddress || r.club_address === selectedAddress)).length}</p>
+          <p>В ремонте: {repairs.filter(r => r.status === 'В ремонте' && (!selectedAddress || r.club_address === selectedAddress)).length}</p>
+        </div>
+      </h1>
 
-      <div className={styles.filters}>
-        <label>Фильтр по статусу:</label>
-        <select
-          value={selectedStatus}
-          onChange={(e) => setSelectedStatus(e.target.value)}
-        >
-          <option value="">Все статусы</option>
-          <option value="Ожидает">Ожидает</option>
-          <option value="У курьера">У курьера</option>
-          <option value="В ремонте">В ремонте</option>
-          <option value="Закрыт">Закрыт</option>
-        </select>
+      
 
-        <label>Фильтр по клубу:</label>
-        <select
-          value={selectedAddress}
-          onChange={(e) => setSelectedAddress(e.target.value)}
-        >
-          <option value="">Все клубы</option>
-          {addressOptions.map((address, index) => (
-            <option key={index} value={address}>
-              {address}
-            </option>
-          ))}
-        </select>
-
-     
-        <label>Сортировка по дате создания:</label>
-        
-        <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
-          <option value="asc">По возрастанию</option>
-          <option value="desc">По убыванию</option>
-        </select>
-        <div style={{ textAlign: 'right', margin: '5px 0' }}>
-        <label>
-          <input
-            type="checkbox"
-            checked={hideClosed}
-            onChange={() => setHideClosed(!hideClosed)}
-            style={{ marginRight: '6px' }}
-          />
-          Скрыть закрытые
-        </label>
-      </div>
+      <div className={styles.tabs}>
+        {statusTabs.map((tab) => (
+          <button
+            key={tab.value}
+            className={`${styles.tabButton} ${activeTab === tab.value ? styles.activeTab : ''}`}
+            onClick={() => setActiveTab(tab.value)}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-    
+      <div className={styles.tabs}>
+        {addressTabs.map((address) => (
+          <button
+            key={address}
+            className={`${styles.tabButton} ${selectedAddress === address ? styles.activeTab : ''}`}
+            onClick={() => setSelectedAddress(address)}
+          >
+            {address}
+          </button>
+        ))}
+      </div>
 
       <table className={styles.table}>
-        <thead>
-          <tr>
-            <th>Клуб</th>
-            <th>Описание</th>
-            <th>Номер ПК</th>
-            <th>Тип оборудования</th>
-            <th>Модель</th>
-            <th>Дата закрытия</th>
-            <th>Дата создания</th>
-            <th>Статус</th>
-            <th>Изменить статус</th>
-          </tr>
-        </thead>
+        <thead>{renderTableHeader()}</thead>
         <tbody>
-          {filteredRepairs.map((repair) => (
-            <tr key={repair.id}>
-              <td>{repair.club_address}</td>
-              <td>{repair.description}</td>
-              <td>{repair.pc_number}</td>
-              <td>{repair.equipment_type}</td>
-              <td>{repair.model}</td>
-              <td>{repair.closed_at ? new Date(repair.closed_at).toLocaleDateString() : ''}</td>
-              <td>{new Date(repair.created_at).toLocaleDateString()}</td>
-              <td>{renderStatusBadge(repair.status)}</td>
-              <td>
-                <select
-                  value={repair.status}
-                  onChange={(e) => handleStatusChange(repair.id, e.target.value)}
-                >
-                  <option value="Ожидает">Ожидает</option>
-                  <option value="У курьера">У курьера</option>
-                  <option value="В ремонте">В ремонте</option>
-                  <option value="Закрыт">Закрыт</option>
-                </select>
-              </td>
-            </tr>
-          ))}
+          {filteredRepairs.map((repair) => renderTableRow(repair))}
         </tbody>
       </table>
 

@@ -37,7 +37,7 @@ export default function Home() {
       <div className={styles.heroSection}>
         <h1 className={styles.title}>Добро пожаловать в систему ремонта PIXEL</h1>
       </div>
-  
+
       <div className={styles.topLeft}>
         {user ? (
           <>
@@ -45,7 +45,6 @@ export default function Home() {
             <button className={styles.button} onClick={handleLogout}>
               Выйти из профиля
             </button>
-            <p>Роль: {user.role}</p>
           </>
         ) : (
           <>
@@ -56,26 +55,27 @@ export default function Home() {
           </>
         )}
       </div>
-  
+
       <div className={styles.mainContent}>
         <div className={styles.buttonContainer}>
           <button
             className={styles.button}
             onClick={handleCreateRequest}
-            disabled={!user}
+            disabled={!user} // Делаем кнопку неактивной, если нет пользователя
           >
             Создать заявку
           </button>
           <button
             className={styles.button}
             onClick={handleViewRepairs}
-            disabled={!user}
+            disabled={!user} // Делаем кнопку неактивной, если нет пользователя
           >
             Просмотр заявок
           </button>
         </div>
       </div>
-  
+
+      {/* Показываем кнопку "Администрирование", только если пользователь авторизован и имеет роль admin */}
       {user && user.role === 'admin' && (
         <div className={styles.bottomRight}>
           <button
@@ -86,7 +86,7 @@ export default function Home() {
           </button>
         </div>
       )}
-  
+
       {/* Логотип в левом нижнем углу */}
       <div className={styles.logoContainer}>
         <img
@@ -95,12 +95,6 @@ export default function Home() {
           className={styles.logo}
         />
       </div>
-  
-      {/* Подпись в правом нижнем углу */}
-      <div className={styles.footer}>
-        <small>Developed by Kimori. Pixel Service [v 1.0]</small>
-      </div>
     </div>
   );
-  
 }

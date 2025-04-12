@@ -1,20 +1,8 @@
-import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import styles from '../styles/Admin.module.css';
-import { useUser } from '../context/UserContext';
 
 export default function AdminPage() {
   const router = useRouter();
-  const { user } = useUser();
-
-  useEffect(() => {
-    if (!user || user.role !== 'admin') {
-      router.replace('/');
-    }
-  }, [user]);
-
-  // Пока проверка идет, можно не рендерить интерфейс
-  if (!user || user.role !== 'admin') return null;
 
   return (
     <div className={styles.container}>
@@ -44,6 +32,7 @@ export default function AdminPage() {
         >
           Статус
         </button>
+        {/* Добавляем кнопку "На главную" */}
         <button
           className={`${styles.button} ${styles.buttonHome}`}
           onClick={() => router.push('/')}

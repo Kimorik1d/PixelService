@@ -1,13 +1,9 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
-import styles from '../styles/Profiles.module.css';
+import { supabase } from '../lib/supabaseClient';  // Подключение к Supabase
+import styles from '../styles/Profiles.module.css';  // CSS модуль для стилизации
 import { useRouter } from 'next/router';
-import { useUser } from '../context/UserContext'; // 👈 добавили импорт
 
 export default function Profiles() {
-  const { user } = useUser(); // 👈 получаем пользователя из контекста
-  const router = useRouter();
-
   const [users, setUsers] = useState([]);
   const [newUser, setNewUser] = useState({
     login: '',
@@ -16,14 +12,12 @@ export default function Profiles() {
     club_address: '',
   });
   const [errorMessage, setErrorMessage] = useState('');
+  const router = useRouter();
 
+  // Загружаем всех пользователей из БД
   useEffect(() => {
-    if (!user || user.role !== 'admin') {
-      router.replace('/');
-    } else {
-      fetchUsers();
-    }
-  }, [user]);
+    fetchUsers();
+  }, []);
 
   const fetchUsers = async () => {
     const { data, error } = await supabase.from('users').select('*');
@@ -34,16 +28,18 @@ export default function Profiles() {
     }
   };
 
+  // Обработчик добавления нового пользователя
   const handleAddUser = async (e) => {
     e.preventDefault();
     setErrorMessage('');
 
+    // Проверка на пустые поля
     if (!newUser.login || !newUser.password) {
       setErrorMessage('Логин и пароль обязательны для заполнения');
       return;
     }
 
-    const { error } = await supabase.from('users').insert([
+    const { data, error } = await supabase.from('users').insert([
       {
         login: newUser.login,
         password: newUser.password,
@@ -56,29 +52,29 @@ export default function Profiles() {
       console.error('Ошибка при добавлении пользователя:', error);
       setErrorMessage('Ошибка при добавлении пользователя');
     } else {
-      setNewUser({ login: '', password: '', role: 'user', club_address: '' });
-      fetchUsers();
+      setNewUser({ login: '', password: '', role: 'user', club_address: '' });  // Очистка полей ввода
+      fetchUsers();  // Перезагрузка списка пользователей
     }
   };
 
+  // Обработчик удаления пользователя
   const handleDeleteUser = async (userId) => {
     const { error } = await supabase.from('users').delete().match({ id: userId });
     if (error) {
       console.error('Ошибка при удалении пользователя:', error);
     } else {
-      fetchUsers();
+      fetchUsers();  // Перезагрузка списка пользователей после удаления
     }
   };
-
-  // 🔒 пока пользователь не подтверждён как админ — не рендерим
-  if (!user || user.role !== 'admin') return null;
 
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>Пользователи</h1>
 
+      {/* Кнопка "Назад" */}
       <button onClick={() => router.push('/admin')} className={styles.backButton}>Назад</button>
 
+      {/* Список пользователей */}
       <div className={styles.userList}>
         <h2>Список пользователей</h2>
         <table className={styles.table}>
@@ -110,6 +106,7 @@ export default function Profiles() {
         </table>
       </div>
 
+      {/* Форма для добавления нового пользователя */}
       <div className={styles.formContainer}>
         <h2>Добавить нового пользователя</h2>
         <form onSubmit={handleAddUser}>
@@ -145,6 +142,7 @@ export default function Profiles() {
             >
               <option value="user">Пользователь</option>
               <option value="admin">Администратор</option>
+              <option value="courier">Курьер</option>
             </select>
           </div>
           <div className={styles.formGroup}>

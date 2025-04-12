@@ -46,14 +46,18 @@ export default function CreateRepair() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const timeZoneOffset = new Date().toLocaleString('en-US', { timeZone: 'Asia/Krasnoyarsk' });
+      const localCreatedAt = new Date(timeZoneOffset).toISOString();
+
       const { data, error } = await supabase.from('repairs').insert([
         {
           club_address: user?.club_address || '',
           description,
-          status: 'Ожидает',
+          status: 'Неисправно',
           pc_number: pcNumber,
           equipment_type: equipmentTypes.find((type) => type.id === parseInt(selectedTypeId))?.name,
           model: models.find((model) => model.id === parseInt(selectedModel))?.model_name,
+          created_at: localCreatedAt,
         },
       ]);
 

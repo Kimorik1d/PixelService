@@ -7,11 +7,7 @@ import { useUser } from '../context/UserContext';
 export default function RepairsPage() {
   const [repairs, setRepairs] = useState([]);
   const [pcNumbers, setPcNumbers] = useState({});
-  const [descriptions, setDescriptions] = useState({});
-  const [sortDirection, setSortDirection] = useState('newest');
-  const [modalVisible, setModalVisible] = useState(false);
-  const [selectedRepairId, setSelectedRepairId] = useState(null);
-  const [showAllHistory, setShowAllHistory] = useState(false);
+  const [activeTab, setActiveTab] = useState('Ожидание');
   const { user } = useUser();
   const router = useRouter();
 
@@ -25,54 +21,45 @@ export default function RepairsPage() {
     else {
       setRepairs(data);
       setPcNumbers(data.reduce((acc, r) => ({ ...acc, [r.id]: r.pc_number }), {}));
-      setDescriptions(data.reduce((acc, r) => ({ ...acc, [r.id]: r.description }), {}));
     }
   };
 
-  const updateStatus = async (id, newStatus) => {
+const updateStatus = async (id, newStatus) => {
     const updateData = { status: newStatus };
+
     if (newStatus === 'Закрыт') {
       updateData.closed_at = new Date().toISOString();
     }
+
+    if (newStatus === 'В ремонте') {
+      updateData.sent_at = new Date().toISOString();
+    }
+
     const { error } = await supabase.from('repairs').update(updateData).eq('id', id);
-    if (error) console.error('Ошибка при обновлении статуса:', error.message);
+    if (error) {
+      console.error('Ошибка при обновлении статуса:', error.message);
+    } else {
+      fetchRepairs();
+    }
+  };
+
+  const confirmRepair = async (id) => {
+    const updateData = {
+      status: 'В ремонте',
+      sent_at: new Date().toISOString(),
+      approved: true
+    };
+    const { error } = await supabase.from('repairs').update(updateData).eq('id', id);
+    if (error) console.error('Ошибка при подтверждении:', error.message);
     else fetchRepairs();
   };
+
+  
 
   const updatePcNumber = async (id, newNumber) => {
     const { error } = await supabase.from('repairs').update({ pc_number: newNumber }).eq('id', id);
     if (error) console.error('Ошибка при обновлении номера ПК:', error.message);
     else fetchRepairs();
-  };
-
-  const updateDescription = async (id, newDescription) => {
-    const { error } = await supabase.from('repairs').update({ description: newDescription }).eq('id', id);
-    if (error) console.error('Ошибка при обновлении описания:', error.message);
-    else fetchRepairs();
-  };
-
-  const renderDescriptionCell = (repair, editable = true) => {
-    if (!editable) return <span>{repair.description}</span>;
-
-    const value = descriptions[repair.id] || '';
-    const handleBlur = () => {
-      if (repair.description !== value) updateDescription(repair.id, value);
-    };
-
-    return (
-      <textarea
-        value={value}
-        className={styles.textareaAutosize}
-        onChange={(e) => {
-          const el = e.target;
-          el.style.height = 'auto';
-          el.style.height = `${el.scrollHeight}px`;
-          setDescriptions((prev) => ({ ...prev, [repair.id]: el.value }));
-        }}
-        onBlur={handleBlur}
-        rows={2}
-      />
-    );
   };
 
   const renderPcNumberCell = (repair, editable = true) => {
@@ -81,11 +68,9 @@ export default function RepairsPage() {
     const handleBlur = () => {
       if (repair.pc_number !== value) updatePcNumber(repair.id, value);
     };
-
     return (
       <input
         type="text"
-        maxLength={2}
         value={value}
         className={styles.inputInline}
         onChange={(e) => setPcNumbers((prev) => ({ ...prev, [repair.id]: e.target.value }))}
@@ -94,143 +79,115 @@ export default function RepairsPage() {
     );
   };
 
-  const renderStatusCell = (repair, editable = true) => {
-    const handleChange = (e) => updateStatus(repair.id, e.target.value);
+  const renderStatusBadge = (status) => {
     const statusClass =
-      repair.status === 'Ожидает' ? styles.statusPending :
-      repair.status === 'В ремонте' ? styles.statusInRepair :
-      repair.status === 'Закрыт' ? styles.statusClosed :
-      repair.status === 'У курьера' ? styles.statusCourier : '';
-
-    if (!editable) {
-      return <span className={`${styles.statusBadge} ${statusClass}`}>{repair.status}</span>;
-    }
-
+      status === 'Неисправно' ? styles.statusPending :
+      status === 'У курьера' ? styles.statusCourier :
+      status === 'В ремонте' ? styles.statusInRepair :
+      styles.statusClosed;
     return (
-      <select
-        value={repair.status}
-        onChange={handleChange}
-        className={`${styles.statusSelect} ${statusClass}`}
-      >
-        <option value="Ожидает">Ожидает</option>
-        <option value="В ремонте">В ремонте</option>
-        <option value="У курьера">У курьера</option>
-      </select>
+      <span className={`${styles.statusBadge} ${statusClass}`} style={{ whiteSpace: 'nowrap' }}>
+        {status}
+      </span>
     );
   };
 
-  const openCloseModal = (repairId) => {
-    setSelectedRepairId(repairId);
-    setModalVisible(true);
+  const formatDateTime = (isoString) => {
+    const date = new Date(isoString);
+    date.setHours(date.getHours() + 7); // добавляем 7 часов вручную
+    return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
   };
+  
+  
 
-  const confirmClose = () => {
-    if (selectedRepairId) {
-      updateStatus(selectedRepairId, 'Закрыт');
-      setModalVisible(false);
-      setSelectedRepairId(null);
-    }
-  };
-
-  const cancelClose = () => {
-    setModalVisible(false);
-    setSelectedRepairId(null);
-  };
-
-  const renderTable = (title, filteredRepairs) => (
-    <div className={`${styles.tableSection} ${title === 'История заявок' ? styles.history : ''}`}>
+  const renderTable = (title, filteredRepairs, actions) => (
+    <div className={styles.tableSection}>
       <h2 className={styles.tableTitle}>{title}</h2>
       <table className={styles.table}>
         <thead>
           <tr>
+            <th>ID</th>
             <th>Клуб</th>
-            <th>Описание</th>
             <th>Номер ПК</th>
             <th>Тип оборудования</th>
             <th>Модель</th>
-            <th>Статус</th>
-            {title === 'История заявок' && <th>Дата закрытия</th>}
             <th>Дата создания</th>
-            {title === 'Заявки в ремонте' && <th>Действие</th>}
+            {title !== 'Ожидание' && title !== 'На отправке' && <th>Дата отправки</th>}
+            {title !== 'Ожидание' && title !== 'На отправке' && title !== 'В ремонте' && <th>Дата закрытия</th>}
+            <th>Статус</th>
+            {title !== 'История' && <th>Действия</th>}
           </tr>
         </thead>
         <tbody>
           {filteredRepairs.map((repair) => (
             <tr key={repair.id}>
+              <td>{repair.id}</td>
               <td>{repair.club_address}</td>
-              <td>{renderDescriptionCell(repair, title !== 'История заявок')}</td>
-              <td>{renderPcNumberCell(repair, title !== 'История заявок')}</td>
+              <td>{renderPcNumberCell(repair, title !== 'История')}</td>
               <td>{repair.equipment_type}</td>
               <td>{repair.model}</td>
-              <td>{renderStatusCell(repair, title !== 'История заявок')}</td>
-              {title === 'История заявок' && (
-                <td>{repair.closed_at ? new Date(repair.closed_at).toLocaleDateString() : ''}</td>
-              )}
-              <td>{new Date(repair.created_at).toLocaleDateString()}</td>
-              {title === 'Заявки в ремонте' && (
-                <td>
-                  <button className={styles.closeButton} onClick={() => openCloseModal(repair.id)}>
-                    Закрыть
-                  </button>
-                </td>
-              )}
+              <td>{formatDateTime(repair.created_at)}</td>
+              {title !== 'Ожидание' && title !== 'На отправке' && <td>{repair.sent_at ? formatDateTime(repair.sent_at) : ''}</td>}
+              {title !== 'Ожидание' && title !== 'На отправке' && title !== 'В ремонте' && <td>{repair.closed_at ? formatDateTime(repair.closed_at) : ''}</td>}
+              <td>{renderStatusBadge(repair.status)}</td>
+              {title !== 'История' && <td>{actions(repair)}</td>}
             </tr>
           ))}
         </tbody>
       </table>
-      {title === 'История заявок' && (
-        <div style={{ marginTop: '10px', textAlign: 'center' }}>
-          <button onClick={() => setShowAllHistory((prev) => !prev)}>
-            {showAllHistory ? 'Скрыть' : 'Показать все'}
-          </button>
-        </div>
-      )}
     </div>
   );
 
-  const filteredRepairs = repairs
-    .filter(r => r.club_address === user?.club_address)
-    .sort((a, b) => {
-      const dateA = new Date(a.created_at);
-      const dateB = new Date(b.created_at);
-      return sortDirection === 'newest' ? dateB - dateA : dateA - dateB;
-    });
+  const filteredRepairs = repairs.filter(r => user?.role === 'courier' || r.club_address === user?.club_address);
 
-  const visibleHistory = filteredRepairs
-    .filter((r) => r.status === 'Закрыт')
-    .slice(0, showAllHistory ? undefined : 5);
+  const tabOptions = user?.role === 'courier'
+    ? ['На отправке']
+    : ['Ожидание', 'На отправке', 'В ремонте', 'История'];
+
+  const filteredByTab = {
+    'Ожидание': filteredRepairs.filter((r) => r.status === 'Неисправно'),
+    'На отправке': filteredRepairs.filter((r) => r.status === 'На отправке' || r.status === 'У курьера'),
+    'В ремонте': filteredRepairs.filter((r) => r.status === 'В ремонте'),
+    'История': filteredRepairs.filter((r) => r.status === 'Закрыт'),
+  };
+
+  const renderActions = (repair) => {
+    if (user?.role === 'courier' && activeTab === 'На отправке' && repair.status === 'На отправке') {
+      return <button onClick={() => updateStatus(repair.id, 'У курьера')}>Передано</button>;
+    }
+    if (activeTab === 'Ожидание') {
+      return <button onClick={() => updateStatus(repair.id, 'На отправке')}>Отправлено</button>;
+    }
+    if (activeTab === 'На отправке') {
+      return <button onClick={() => updateStatus(repair.id, 'У курьера')}>Передано</button>;
+    }
+    if (activeTab === 'В ремонте') {
+      return <button onClick={() => updateStatus(repair.id, 'Закрыт')}>Закрыть</button>;
+    }
+    return null;
+  };
 
   return (
     <div className={styles.container}>
-      <div className={styles.topControls}>
-        <button className={styles.backButton} onClick={() => router.push('/')}>На главную</button>
-        <div className={styles.sortContainer}>
-          <label style={{ marginRight: '10px' }}>Сортировка:</label>
-          <select value={sortDirection} onChange={(e) => setSortDirection(e.target.value)}>
-            <option value="newest">Сначала новые</option>
-            <option value="oldest">Сначала старые</option>
-          </select>
-        </div>
-      </div>
-
       <h1 className={styles.title}>Список заявок</h1>
 
-      {renderTable('Заявки в ожидании', filteredRepairs.filter((r) => r.status === 'Ожидает'))}
-      {renderTable('Заявки в ремонте', filteredRepairs.filter((r) => r.status === 'В ремонте' || r.status === 'У курьера'))}
-      {renderTable('История заявок', visibleHistory)}
+      <div className={styles.tabs}>
+        {tabOptions.map(tab => (
+          <button
+            key={tab}
+            className={`${styles.tabButton} ${activeTab === tab ? styles.activeTab : ''}`}
+            onClick={() => setActiveTab(tab)}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
 
-      {modalVisible && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <h3>Подтверждение</h3>
-            <p>Вы уверены, что хотите закрыть эту заявку?</p>
-            <div className={styles.modalActions}>
-              <button className={styles.confirmButton} onClick={confirmClose}>Да, закрыть</button>
-              <button className={styles.cancelButton} onClick={cancelClose}>Отмена</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {renderTable(activeTab, filteredByTab[activeTab], renderActions)}
+
+      <div className={styles.buttonContainer}>
+        <button className={styles.backButton} onClick={() => router.push('/')}>На главную</button>
+      </div>
     </div>
   );
 }
