@@ -1,3 +1,4 @@
+import { supabase } from '../lib/supabaseClient';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { useUser } from '../context/UserContext';
@@ -13,16 +14,26 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage('');
-
+  
     // Вход пользователя с проверкой логина и пароля
     const { success, message } = await loginUser(login, password);
-
+  
     if (success) {
+      // Логирование входа
+      await supabase.from('logs').insert([
+        {
+          user_login: login,
+          action: 'Успешная авторизация',
+          details: `Пользователь вошёл в систему`,
+        },
+      ]);
+  
       router.push('/'); // Перенаправляем на главную страницу
     } else {
       setErrorMessage(message); // Показываем ошибку
     }
   };
+  
 
   return (
     <div className={styles.container}>

@@ -49,19 +49,30 @@ export default function CreateRepair() {
       const timeZoneOffset = new Date().toLocaleString('en-US', { timeZone: 'Asia/Krasnoyarsk' });
       const localCreatedAt = new Date(timeZoneOffset).toISOString();
 
-      const { data, error } = await supabase.from('repairs').insert([
+      const { data: insertedRepair, error: insertError } = await supabase
+        .from('repairs')
+        .insert([
+          {
+            club_address: user?.club_address || '',
+            description,
+            status: 'Неисправно',
+            pc_number: pcNumber,
+            equipment_type: equipmentTypes.find((type) => type.id === parseInt(selectedTypeId))?.name,
+            model: models.find((model) => model.id === parseInt(selectedModel))?.model_name,
+            created_at: localCreatedAt,
+          },
+        ])
+        .select();
+
+      if (insertError) throw insertError;
+
+      await supabase.from('logs').insert([
         {
-          club_address: user?.club_address || '',
-          description,
-          status: 'Неисправно',
-          pc_number: pcNumber,
-          equipment_type: equipmentTypes.find((type) => type.id === parseInt(selectedTypeId))?.name,
-          model: models.find((model) => model.id === parseInt(selectedModel))?.model_name,
-          created_at: localCreatedAt,
+          user_login: user?.login || 'неизвестно',
+          action: 'Создание заявки',
+          details: `ID: ${insertedRepair?.[0]?.id}, ПК: ${pcNumber}, Описание: ${description}`,
         },
       ]);
-
-      if (error) throw error;
 
       alert('Заявка успешно создана!');
       setDescription('');

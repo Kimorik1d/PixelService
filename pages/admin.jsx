@@ -15,11 +15,18 @@ export default function AdminPage() {
           Заявки
         </button>
         <button
+          className={`${styles.button} ${styles.buttonOverview}`}
+          onClick={() => router.push('/overview')}
+        >
+          Обзор
+        </button>
+        <button
           className={`${styles.button} ${styles.buttonEquipment}`}
           onClick={() => router.push('/EditEquipment')}
         >
           Номенклатура
         </button>
+
         <button
           className={`${styles.button} ${styles.buttonProfiles}`}
           onClick={() => router.push('/profiles')}
@@ -27,12 +34,18 @@ export default function AdminPage() {
           Профили
         </button>
         <button
+          className={`${styles.button} ${styles.buttonLogs}`}
+          onClick={() => router.push('/logs')}
+        >
+          Логи
+        </button>
+        <button
           className={`${styles.button} ${styles.buttonStatus}`}
           onClick={() => router.push('/status')}
         >
           Статус
         </button>
-        {/* Добавляем кнопку "На главную" */}
+
         <button
           className={`${styles.button} ${styles.buttonHome}`}
           onClick={() => router.push('/')}

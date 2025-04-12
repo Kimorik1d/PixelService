@@ -38,3 +38,11 @@
 .button:hover {
   background-color: #005bb5;
 }
+
+
+
+/* Визуальное отделение кнопки "На главную" */
+.buttonHome {
+  margin-top: 30px;
+  background-color: #119205;
+}

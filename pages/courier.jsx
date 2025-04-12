@@ -28,18 +28,30 @@ export default function CourierPage() {
   };
 
   const handleConfirm = async (id) => {
+    const repair = repairs.find((r) => r.id === id);
     const updateData = {
       status: 'В ремонте',
       approved: true,
       sent_at: new Date().toISOString()
     };
+  
     const { error } = await supabase.from('repairs').update(updateData).eq('id', id);
     if (error) {
       console.error('Ошибка при подтверждении:', error.message);
     } else {
+      // логирование действия курьера
+      await supabase.from('logs').insert([
+        {
+          user_login: user?.login || 'неизвестно',
+          action: 'Курьер подтвердил получение',
+          details: `ID: ${id}, клуб: ${repair?.club_address}, ПК: ${repair?.pc_number}`,
+        },
+      ]);
+  
       fetchRepairs();
     }
   };
+  
 
   const formatDateTime = (isoString) => {
     const date = new Date(isoString);
