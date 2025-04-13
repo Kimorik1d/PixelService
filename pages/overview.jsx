@@ -21,7 +21,6 @@ export default function OverviewPage() {
   const [pcRequests, setPcRequests] = useState([]);
   const [clubStats, setClubStats] = useState({ Неисправно: 0, 'На отправке': 0, 'В ремонте': 0 });
   const [editIds, setEditIds] = useState({});
-  
 
   useEffect(() => {
     if (user === null) return;
@@ -43,21 +42,20 @@ export default function OverviewPage() {
 
   useEffect(() => {
     const handleMouseMove = (e) => {
-        if (draggingId === null) return;
-      
-        const canvas = document.querySelector(`.${styles.canvas}`);
-        const canvasRect = canvas.getBoundingClientRect();
-      
-        const newX = e.clientX - canvasRect.left - offset.x;
-        const newY = e.clientY - canvasRect.top - offset.y;
-      
-        setLayout((prev) =>
-          prev.map((pc) =>
-            pc.id === draggingId ? { ...pc, x: newX, y: newY } : pc
-          )
-        );
-      };
-      
+      if (draggingId === null) return;
+
+      const canvas = document.querySelector(`.${styles.canvas}`);
+      const canvasRect = canvas.getBoundingClientRect();
+
+      const newX = e.clientX - canvasRect.left - offset.x;
+      const newY = e.clientY - canvasRect.top - offset.y;
+
+      setLayout((prev) =>
+        prev.map((el) =>
+          el.id === draggingId ? { ...el, x: newX, y: newY } : el
+        )
+      );
+    };
 
     const handleMouseUp = () => setDraggingId(null);
 
@@ -78,7 +76,7 @@ export default function OverviewPage() {
 
     if (error) return;
 
-    const unique = [...new Set(data.map(r => r.club_address))];
+    const unique = [...new Set(data.map((r) => r.club_address))];
     setAvailableAddresses(unique);
     setSelectedAddress(unique[0] || '');
   };
@@ -92,7 +90,7 @@ export default function OverviewPage() {
 
     if (error) return;
 
-    const pcs = data.map(r => r.pc_number);
+    const pcs = data.map((r) => r.pc_number);
     setFaultyPcs(pcs);
   };
 
@@ -110,7 +108,8 @@ export default function OverviewPage() {
       const defaultLayout = Array.from({ length: 50 }, (_, i) => ({
         id: `${i + 1}`,
         x: 100 + (i % 10) * 80,
-        y: 100 + Math.floor(i / 10) * 80
+        y: 100 + Math.floor(i / 10) * 80,
+        type: 'pc',
       }));
       setLayout(defaultLayout);
     }
@@ -122,9 +121,9 @@ export default function OverviewPage() {
       .select('status')
       .eq('club_address', address)
       .in('status', ['Неисправно', 'На отправке', 'У курьера', 'В ремонте']);
-  
+
     if (error) return;
-  
+
     const stats = { Неисправно: 0, 'На отправке': 0, 'В ремонте': 0 };
     data.forEach((r) => {
       if (r.status === 'Неисправно') stats['Неисправно']++;
@@ -133,7 +132,6 @@ export default function OverviewPage() {
     });
     setClubStats(stats);
   };
-  
 
   const fetchPcRequests = async (pcId) => {
     const { data, error } = await supabase
@@ -157,12 +155,17 @@ export default function OverviewPage() {
   };
 
   const handleDeletePc = (id) => {
-    setLayout((prev) => prev.filter(pc => pc.id !== id));
+    setLayout((prev) => prev.filter((el) => el.id !== id));
   };
 
   const handleAddPc = () => {
     const nextId = `${layout.length + 1}`;
-    setLayout((prev) => [...prev, { id: nextId, x: 200, y: 200 }]);
+    setLayout((prev) => [...prev, { id: nextId, x: 200, y: 200, type: 'pc' }]);
+  };
+
+  const handleAddLabel = () => {
+    const nextId = `label-${layout.filter((l) => l.type === 'label').length + 1}`;
+    setLayout((prev) => [...prev, { id: nextId, x: 250, y: 250, type: 'label', text: 'Надпись' }]);
   };
 
   const handleDragStart = (e, id) => {
@@ -173,19 +176,20 @@ export default function OverviewPage() {
     });
     setDraggingId(id);
   };
-  const workingCount = layout.filter(pc => !faultyPcs.includes(pc.id)).length;
-const faultyCount = layout.filter(pc => faultyPcs.includes(pc.id)).length;
 
   const handleChangeId = (oldId, newId) => {
     const trimmed = newId.trim();
     if (!trimmed) return;
     setLayout((prev) => {
-      const exists = prev.some(pc => pc.id === trimmed);
+      const exists = prev.some((pc) => pc.id === trimmed);
       if (exists) return prev;
-      return prev.map(pc => (pc.id === oldId ? { ...pc, id: trimmed } : pc));
+      return prev.map((pc) => (pc.id === oldId ? { ...pc, id: trimmed } : pc));
     });
     setEditIds((prev) => ({ ...prev, [oldId]: false }));
   };
+
+  const workingCount = layout.filter((pc) => pc.type === 'pc' && !faultyPcs.includes(pc.id)).length;
+  const faultyCount = layout.filter((pc) => pc.type === 'pc' && faultyPcs.includes(pc.id)).length;
 
   if (checkingAccess) return null;
 
@@ -199,68 +203,88 @@ const faultyCount = layout.filter(pc => faultyPcs.includes(pc.id)).length;
 
       <h1 className={baseStyles.title}>Состояние ПК по клубам</h1>
 
-
-<div className={styles.tabs}>
-  {[
-    ...availableAddresses,
-    'Киренского', 'Мартынова', 'Карамзина', '9 мая', 'Алексеева', 'Полигон', 'Лесников'
-  ].map((address) => (
-    <button
-      key={address}
-      className={`${styles.tabButton} ${selectedAddress === address ? styles.activeTab : ''}`}
-      onClick={() => setSelectedAddress(address)}
-    >
-      {address}
-    </button>
-  ))}
-</div>
-
+      <div className={styles.tabs}>
+        {[...availableAddresses, 'Киренского', 'Мартынова', 'Карамзина', '9 мая', 'Алексеева', 'Полигон', 'Лесников'].map((address) => (
+          <button
+            key={address}
+            className={`${styles.tabButton} ${selectedAddress === address ? styles.activeTab : ''}`}
+            onClick={() => setSelectedAddress(address)}
+          >
+            {address}
+          </button>
+        ))}
+      </div>
 
       <div className={styles.legend}>
-  <div className={styles.legendItem}>
-    <div className={`${styles.colorBox} ${styles.working}`} />
-    <span>Исправен ({workingCount})</span>
-  </div>
-  <div className={styles.legendItem}>
-    <div className={`${styles.colorBox} ${styles.faulty}`} />
-    <span>Неисправен ({faultyCount})</span>
-  </div>
-</div>
-
+        <div className={styles.legendItem}>
+          <div className={`${styles.colorBox} ${styles.working}`} />
+          <span>Исправен ({workingCount})</span>
+        </div>
+        <div className={styles.legendItem}>
+          <div className={`${styles.colorBox} ${styles.faulty}`} />
+          <span>Неисправен ({faultyCount})</span>
+        </div>
+      </div>
 
       <div className={styles.canvas}>
-        {layout.map((pc) => {
-          const isFaulty = faultyPcs.includes(pc.id);
+        {layout.map((item) => {
+          if (item.type === 'label') {
+            return (
+              <div
+                key={item.id}
+                className={styles.labelBox}
+                style={{ left: item.x, top: item.y }}
+                onMouseDown={isEditMode ? (e) => handleDragStart(e, item.id) : null}
+              >
+                {isEditMode ? (
+                  <input
+                    value={item.text}
+                    onChange={(e) => {
+                      const newText = e.target.value;
+                      setLayout((prev) =>
+                        prev.map((el) => el.id === item.id ? { ...el, text: newText } : el)
+                      );
+                    }}
+                    className={styles.labelInput}
+                  />
+                ) : (
+                  <span>{item.text}</span>
+                )}
+                {isEditMode && (
+                  <button className={styles.deleteButton} onClick={() => handleDeletePc(item.id)}>✖</button>
+                )}
+              </div>
+            );
+          }
+
+          const isFaulty = faultyPcs.includes(item.id);
           return (
             <div
-              key={pc.id}
+              key={item.id}
               className={`${styles.pcBox} ${isFaulty ? styles.faulty : styles.working}`}
-              style={{ left: pc.x, top: pc.y }}
-              onMouseDown={isEditMode ? (e) => handleDragStart(e, pc.id) : null}
-              onClick={!isEditMode ? () => fetchPcRequests(pc.id) : undefined}
+              style={{ left: item.x, top: item.y }}
+              onMouseDown={isEditMode ? (e) => handleDragStart(e, item.id) : null}
+              onClick={!isEditMode ? () => fetchPcRequests(item.id) : undefined}
             >
-              {isEditMode && editIds[pc.id] ? (
+              {isEditMode && editIds[item.id] ? (
                 <input
-                type="text"
-                value={pc.id}
-                onChange={(e) => handleChangeId(pc.id, e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleChangeId(pc.id, e.target.value);
-                  } else if (e.key === 'Escape') {
-                    setEditIds((prev) => ({ ...prev, [pc.id]: false }));
-                  }
-                }}
-                onBlur={() => setEditIds((prev) => ({ ...prev, [pc.id]: false }))}
-                className={styles.inputEdit}
-              />
+                  type="text"
+                  value={item.id}
+                  onChange={(e) => handleChangeId(item.id, e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleChangeId(item.id, e.target.value);
+                    else if (e.key === 'Escape') setEditIds((prev) => ({ ...prev, [item.id]: false }));
+                  }}
+                  onBlur={() => setEditIds((prev) => ({ ...prev, [item.id]: false }))}
+                  className={styles.inputEdit}
+                />
               ) : (
-                <span onDoubleClick={() => setEditIds((prev) => ({ ...prev, [pc.id]: true }))}>
-                  {pc.id}
+                <span onDoubleClick={() => setEditIds((prev) => ({ ...prev, [item.id]: true }))}>
+                  {item.id}
                 </span>
               )}
               {isEditMode && (
-                <button className={styles.deleteButton} onClick={() => handleDeletePc(pc.id)}>✖</button>
+                <button className={styles.deleteButton} onClick={() => handleDeletePc(item.id)}>✖</button>
               )}
             </div>
           );
@@ -310,7 +334,14 @@ const faultyCount = layout.filter(pc => faultyPcs.includes(pc.id)).length;
               onClick={handleAddPc}
               style={{ marginLeft: '10px', backgroundColor: '#28a745' }}
             >
-              Добавить
+              Добавить ПК
+            </button>
+            <button
+              className={baseStyles.buttonBack}
+              onClick={handleAddLabel}
+              style={{ marginLeft: '10px', backgroundColor: '#6f42c1' }}
+            >
+              Добавить надпись
             </button>
             <button
               className={baseStyles.buttonBack}

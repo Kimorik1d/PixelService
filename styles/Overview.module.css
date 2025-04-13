@@ -207,4 +207,26 @@
     outline: none;
     padding: 0;
   }
-   
+  .labelBox {
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.4);
+    padding: 6px 10px;
+    border: none;
+    cursor: move;
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    max-width: 300px;
+    border-radius: 6px;
+  }
+  
+  .labelInput {
+    width: 200px;
+    font-size: 18px;
+    font-weight: bold;
+    border: none;
+    background: transparent;
+    outline: none;
+    color: white;
+  }
+  

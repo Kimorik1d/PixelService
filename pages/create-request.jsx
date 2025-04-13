@@ -16,11 +16,13 @@ export default function CreateRepair() {
   const [selectedModel, setSelectedModel] = useState('');
 
   useEffect(() => {
-    fetchEquipmentTypes();
-  }, []);
+    if (user?.club_address) {
+      fetchEquipmentTypes();
+    }
+  }, [user]);
 
   useEffect(() => {
-    if (selectedTypeId) {
+    if (selectedTypeId && user?.club_address) {
       fetchModelsForType(selectedTypeId);
     } else {
       setModels([]);
@@ -29,18 +31,62 @@ export default function CreateRepair() {
   }, [selectedTypeId]);
 
   const fetchEquipmentTypes = async () => {
-    const { data, error } = await supabase.from('equipment_types').select('*');
-    if (error) console.error('Ошибка загрузки типов оборудования:', error);
-    else setEquipmentTypes(data);
+    const { data: typeLinks, error: linkError } = await supabase
+      .from('club_equipment_types')
+      .select('equipment_type_id')
+      .eq('club_address', user.club_address);
+
+    if (linkError) {
+      console.error('Ошибка загрузки club_equipment_types:', linkError);
+      return;
+    }
+
+    const typeIds = typeLinks.map(link => link.equipment_type_id);
+    if (!typeIds.length) {
+      setEquipmentTypes([]);
+      return;
+    }
+
+    const { data: types, error: typesError } = await supabase
+      .from('equipment_types')
+      .select('*')
+      .in('id', typeIds);
+
+    if (typesError) {
+      console.error('Ошибка загрузки типов оборудования:', typesError);
+    } else {
+      setEquipmentTypes(types);
+    }
   };
 
   const fetchModelsForType = async (typeId) => {
-    const { data, error } = await supabase
+    const { data: modelLinks, error: linkError } = await supabase
+      .from('club_equipment_models')
+      .select('equipment_model_id')
+      .eq('club_address', user.club_address);
+
+    if (linkError) {
+      console.error('Ошибка загрузки club_equipment_models:', linkError);
+      return;
+    }
+
+    const modelIds = modelLinks.map(link => link.equipment_model_id);
+    if (!modelIds.length) {
+      setModels([]);
+      return;
+    }
+
+    const { data: modelsData, error: modelsError } = await supabase
       .from('equipment_models')
       .select('*')
-      .eq('type_id', typeId);
-    if (error) console.error('Ошибка загрузки моделей:', error);
-    else setModels(data);
+      .eq('type_id', typeId)
+      .in('id', modelIds);
+
+    if (modelsError) {
+      console.error('Ошибка загрузки моделей:', modelsError);
+    } else {
+      setModels(modelsData);
+    }
   };
 
   const handleSubmit = async (e) => {
