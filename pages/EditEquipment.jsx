@@ -3,8 +3,9 @@ import { supabase } from '../lib/supabaseClient';
 import { useRouter } from 'next/router';
 import styles from '../styles/EditEquipment.module.css';
 import { useUser } from '../context/UserContext';
+import { withAdminGuard } from '../lib/withAdminGuard';
 
-export default function EditEquipment() {
+function EditEquipment() {
   const [clubs, setClubs] = useState([]);
   const [selectedClubAddress, setSelectedClubAddress] = useState('');
   const [newClub, setNewClub] = useState('');
@@ -211,3 +212,4 @@ export default function EditEquipment() {
     </div>
   );
 }
+export default withAdminGuard(EditEquipment);

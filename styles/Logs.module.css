@@ -1,0 +1,31 @@
+.filter {
+    margin: 1rem 0;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    line-height: 1.2;
+    border: none;
+  }
+  
+  .table th,
+  .table td {
+    padding: 4px 6px;
+    text-align: left;
+    border-bottom: none; /* Только нижняя граница */
+  }
+  
+  .table thead {
+    background-color: #f0f0f0;
+    border-bottom: none;
+  }
+  
+  .table tbody tr {
+    height: 28px;
+    border: none; /* Убираем белые полосы */
+  }
+  

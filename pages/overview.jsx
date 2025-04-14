@@ -4,8 +4,9 @@ import { useRouter } from 'next/router';
 import { supabase } from '../lib/supabaseClient';
 import baseStyles from '../styles/Status.module.css';
 import styles from '../styles/Overview.module.css';
+import { withAdminGuard } from '../lib/withAdminGuard';
 
-export default function OverviewPage() {
+function OverviewPage() {
   const { user } = useUser();
   const router = useRouter();
   const [checkingAccess, setCheckingAccess] = useState(true);
@@ -34,11 +35,13 @@ export default function OverviewPage() {
 
   useEffect(() => {
     if (selectedAddress) {
+      console.log('🧭 Вкладка:', selectedAddress);
       fetchActiveRepairs(selectedAddress);
       fetchLayoutFromDB(selectedAddress);
       fetchClubStats(selectedAddress);
     }
   }, [selectedAddress]);
+  
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -84,15 +87,20 @@ export default function OverviewPage() {
   const fetchActiveRepairs = async (address) => {
     const { data, error } = await supabase
       .from('repairs')
-      .select('pc_number')
+      .select('pc_number, status')
       .eq('club_address', address)
-      .neq('status', 'Закрыт');
-
-    if (error) return;
-
-    const pcs = data.map((r) => r.pc_number);
-    setFaultyPcs(pcs);
+      .in('status', ['Неисправно', 'На отправке', 'У курьера', 'В ремонте']);
+  
+    if (error) {
+      console.error('❌ Ошибка при загрузке заявок:', error.message);
+      return;
+    }
+  
+    console.log('🔧 Активные заявки для', address, ':', data);
+    setFaultyPcs(data.map((r) => String(r.pc_number))); // 👈 Приведение к строкам
   };
+  
+  
 
   const fetchLayoutFromDB = async (address) => {
     const { data, error } = await supabase
@@ -113,6 +121,8 @@ export default function OverviewPage() {
       }));
       setLayout(defaultLayout);
     }
+    console.log('🧱 Макет для', address, ':', data?.layout?.map((el) => el.id));
+
   };
 
   const fetchClubStats = async (address) => {
@@ -188,8 +198,12 @@ export default function OverviewPage() {
     setEditIds((prev) => ({ ...prev, [oldId]: false }));
   };
 
-  const workingCount = layout.filter((pc) => pc.type === 'pc' && !faultyPcs.includes(pc.id)).length;
-  const faultyCount = layout.filter((pc) => pc.type === 'pc' && faultyPcs.includes(pc.id)).length;
+  const pcsInLayout = layout.filter((pc) => pc.type === 'pc').map((pc) => pc.id);
+  const uniqueFaulty = [...new Set(faultyPcs)];
+  const faultyCount = pcsInLayout.filter((id) => uniqueFaulty.includes(id)).length;
+  const workingCount = pcsInLayout.length - faultyCount;
+  
+  
 
   if (checkingAccess) return null;
 
@@ -204,7 +218,7 @@ export default function OverviewPage() {
       <h1 className={baseStyles.title}>Состояние ПК по клубам</h1>
 
       <div className={styles.tabs}>
-        {[...availableAddresses, 'Киренского', 'Мартынова', 'Карамзина', '9 мая', 'Алексеева', 'Полигон', 'Лесников'].map((address) => (
+        {['Мира', 'Киренского', 'Мартынова', 'Карамзина', '9 мая', 'Алексеева', 'Полигон', 'Лесников'].map((address) => (
           <button
             key={address}
             className={`${styles.tabButton} ${selectedAddress === address ? styles.activeTab : ''}`}
@@ -216,15 +230,16 @@ export default function OverviewPage() {
       </div>
 
       <div className={styles.legend}>
-        <div className={styles.legendItem}>
-          <div className={`${styles.colorBox} ${styles.working}`} />
-          <span>Исправен ({workingCount})</span>
-        </div>
-        <div className={styles.legendItem}>
-          <div className={`${styles.colorBox} ${styles.faulty}`} />
-          <span>Неисправен ({faultyCount})</span>
-        </div>
-      </div>
+  <div className={styles.legendItem}>
+    <div className={`${styles.colorBox} ${styles.working}`} />
+    <span>Исправен ({workingCount})</span>
+  </div>
+  <div className={styles.legendItem}>
+    <div className={`${styles.colorBox} ${styles.faulty}`} />
+    <span>Неисправен ({faultyCount})</span>
+  </div>
+</div>
+
 
       <div className={styles.canvas}>
         {layout.map((item) => {
@@ -356,3 +371,4 @@ export default function OverviewPage() {
     </div>
   );
 }
+export default withAdminGuard(OverviewPage);

@@ -13,7 +13,11 @@ export default function RepairsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (user) fetchRepairs();
+    if (user) {
+      fetchRepairs();
+      const interval = setInterval(fetchRepairs, 5000);
+      return () => clearInterval(interval);
+    }
   }, [user]);
 
   const fetchRepairs = async () => {
@@ -26,8 +30,6 @@ export default function RepairsPage() {
     }
   };
 
-
-  
   const updateStatus = async (id, newStatus) => {
     const updateData = { status: newStatus };
     if (newStatus === 'Закрыт') {
@@ -47,17 +49,6 @@ export default function RepairsPage() {
       ]);
       fetchRepairs();
     }
-  };
-
-  const confirmRepair = async (id) => {
-    const updateData = {
-      status: 'В ремонте',
-      sent_at: new Date().toISOString(),
-      approved: true
-    };
-    const { error } = await supabase.from('repairs').update(updateData).eq('id', id);
-    if (error) console.error('Ошибка при подтверждении:', error.message);
-    else fetchRepairs();
   };
 
   const updatePcNumber = async (id, newNumber) => {
@@ -164,8 +155,8 @@ export default function RepairsPage() {
           <col style={{ width: '80px' }} />
           <col style={{ width: '20px' }} />
           {title !== 'Ожидание' && title !== 'На отправке' && <col style={{ width: '20px' }} />}
-          {title !== 'Ожидание' && title !== 'На отправке' && title !== 'В ремонте' && <col style={{ width: '20px' }} />}
-          <col style={{ width: '20px' }} />
+          {title !== 'Ожидание' && title !== 'На отправке' && title !== 'В ремонте' && title !== 'На получение' && <col style={{ width: '20px' }} />}
+          <col style={{ width: '25px' }} />
           {title !== 'История' && <col style={{ width: '20px' }} />}
         </colgroup>
         <thead>
@@ -178,7 +169,7 @@ export default function RepairsPage() {
             <th>Описание</th>
             <th>Создано</th>
             {title !== 'Ожидание' && title !== 'На отправке' && <th>Отправлено</th>}
-            {title !== 'Ожидание' && title !== 'На отправке' && title !== 'В ремонте' && <th>Закрыто</th>}
+            {title !== 'Ожидание' && title !== 'На отправке' && title !== 'В ремонте' && title !== 'На получение' && <th>Закрыто</th>}
             <th>Статус</th>
             {title !== 'История' && <th>Действия</th>}
           </tr>
@@ -194,7 +185,7 @@ export default function RepairsPage() {
               <td>{renderDescriptionCell(repair, title !== 'История')}</td>
               <td>{formatDateTime(repair.created_at)}</td>
               {title !== 'Ожидание' && title !== 'На отправке' && <td>{repair.sent_at ? formatDateTime(repair.sent_at) : ''}</td>}
-              {title !== 'Ожидание' && title !== 'На отправке' && title !== 'В ремонте' && <td>{repair.closed_at ? formatDateTime(repair.closed_at) : ''}</td>}
+              {title !== 'Ожидание' && title !== 'На отправке' && title !== 'В ремонте' && title !== 'На получение' && <td>{repair.closed_at ? formatDateTime(repair.closed_at) : ''}</td>}
               <td>{renderStatusBadge(repair.status)}</td>
               {title !== 'История' && <td>{actions(repair)}</td>}
             </tr>
@@ -208,12 +199,13 @@ export default function RepairsPage() {
 
   const tabOptions = user?.role === 'courier'
     ? ['На отправке']
-    : ['Ожидание', 'На отправке', 'В ремонте', 'История'];
+    : ['Ожидание', 'На отправке', 'В ремонте', 'На получение', 'История'];
 
   const filteredByTab = {
     'Ожидание': filteredRepairs.filter((r) => r.status === 'Неисправно'),
     'На отправке': filteredRepairs.filter((r) => r.status === 'На отправке' || r.status === 'У курьера'),
     'В ремонте': filteredRepairs.filter((r) => r.status === 'В ремонте'),
+    'На получение': filteredRepairs.filter((r) => r.status === 'Доставка в клуб' || r.status === 'Принято в клубе'),
     'История': filteredRepairs.filter((r) => r.status === 'Закрыт'),
   };
 
@@ -224,11 +216,14 @@ export default function RepairsPage() {
     if (activeTab === 'Ожидание') {
       return <button onClick={() => updateStatus(repair.id, 'На отправке')}>Отправлено</button>;
     }
-    if (activeTab === 'На отправке') {
+    if (activeTab === 'На отправке' && repair.status === 'На отправке') {
       return <button onClick={() => updateStatus(repair.id, 'У курьера')}>Передано</button>;
     }
     if (activeTab === 'В ремонте') {
       return <button onClick={() => updateStatus(repair.id, 'Закрыт')}>Закрыть</button>;
+    }
+    if (activeTab === 'На получение' && repair.status === 'Доставка в клуб') {
+      return <button onClick={() => updateStatus(repair.id, 'Принято в клубе')}>Принято</button>;
     }
     return null;
   };
@@ -255,16 +250,19 @@ export default function RepairsPage() {
       </div>
 
       <div className={styles.tabs}>
-        {tabOptions.map(tab => (
-          <button
-            key={tab}
-            className={`${styles.tabButton} ${activeTab === tab ? styles.activeTab : ''}`}
-            onClick={() => setActiveTab(tab)}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
+  {tabOptions.map((tab) => (
+    <button
+      key={tab}
+      className={`${styles.tabButton} ${activeTab === tab ? styles.activeTab : ''}`}
+      onClick={() => setActiveTab(tab)}
+    >
+      {tab}
+      {tab !== 'История' && ` (${filteredByTab[tab]?.length || 0})`}
+    </button>
+  ))}
+</div>
+
+
 
       {renderTable(activeTab, filteredByTab[activeTab], renderActions)}
     </div>

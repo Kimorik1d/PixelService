@@ -1,7 +1,11 @@
 import { useRouter } from 'next/router';
+import { useEffect } from 'react';
 import styles from '../styles/Admin.module.css';
+import { withAdminGuard } from '../lib/withAdminGuard';
 
-export default function AdminPage() {
+
+function AdminPage() {
+  
   const router = useRouter();
 
   return (
@@ -56,3 +60,4 @@ export default function AdminPage() {
     </div>
   );
 }
+export default withAdminGuard(AdminPage);

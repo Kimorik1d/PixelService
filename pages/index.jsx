@@ -1,25 +1,25 @@
 import { useRouter } from 'next/router';
-import { useUser } from '../context/UserContext'; // Импортируем контекст
+import { useUser } from '../context/UserContext';
 import styles from '../styles/Index.module.css';
 
 export default function Home() {
-  const { user, logout } = useUser(); // Получаем данные о пользователе и функцию выхода
+  const { user, logout } = useUser();
   const router = useRouter();
 
   const handleLogout = () => {
-    logout(); // Вызываем функцию для выхода из системы
-    router.push('/login'); // Перенаправляем на страницу входа
+    logout();
+    router.push('/login');
   };
 
   const handleLoginRedirect = () => {
-    router.push('/login'); // Перенаправление на страницу логина
+    router.push('/login');
   };
 
   const handleCreateRequest = () => {
     if (!user) {
       alert('Пожалуйста, авторизуйтесь для создания заявки.');
     } else {
-      router.push('/create-request'); // Перенаправляем на страницу создания заявки
+      router.push('/create-request');
     }
   };
 
@@ -27,13 +27,12 @@ export default function Home() {
     if (!user) {
       alert('Пожалуйста, авторизуйтесь для просмотра заявок.');
     } else {
-      router.push('/repairs'); // Перенаправляем на страницу просмотра заявок
+      router.push('/repairs');
     }
   };
 
   return (
     <div className={styles.container}>
-      {/* Новый заголовок */}
       <div className={styles.heroSection}>
         <h1 className={styles.title}>Добро пожаловать в систему ремонта PIXEL</h1>
       </div>
@@ -61,33 +60,42 @@ export default function Home() {
           <button
             className={styles.button}
             onClick={handleCreateRequest}
-            disabled={!user} // Делаем кнопку неактивной, если нет пользователя
+            disabled={!user}
           >
             Создать заявку
           </button>
           <button
             className={styles.button}
             onClick={handleViewRepairs}
-            disabled={!user} // Делаем кнопку неактивной, если нет пользователя
+            disabled={!user}
           >
             Просмотр заявок
           </button>
         </div>
+
+        {/* Центрированные кнопки под действиями */}
+        {user && (user.role === 'admin' || user.role === 'courier') && (
+          <div className={styles.bottomCenter}>
+            {user.role === 'admin' && (
+              <button
+                className={styles.buttonAdmin}
+                onClick={() => router.push('/admin')}
+              >
+                Администрирование
+              </button>
+            )}
+            {user.role === 'courier' && (
+              <button
+                className={styles.buttonAdmin}
+                onClick={() => router.push('/courier')}
+              >
+                Курьер
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Показываем кнопку "Администрирование", только если пользователь авторизован и имеет роль admin */}
-      {user && user.role === 'admin' && (
-        <div className={styles.bottomRight}>
-          <button
-            className={styles.buttonAdmin}
-            onClick={() => router.push('/admin')}
-          >
-            Администрирование
-          </button>
-        </div>
-      )}
-
-      {/* Логотип в левом нижнем углу */}
       <div className={styles.logoContainer}>
         <img
           src="/images/logo.jpg"

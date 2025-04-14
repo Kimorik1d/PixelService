@@ -3,11 +3,13 @@ import { useRouter } from 'next/router';
 import { supabase } from '../lib/supabaseClient';
 import { useUser } from '../context/UserContext';
 import styles from '../styles/Logs.module.css';
+import { withAdminGuard } from '../lib/withAdminGuard';
 
-export default function LogsPage() {
+function LogsPage() {
   const { user } = useUser();
   const router = useRouter();
   const [logs, setLogs] = useState([]);
+  const [filter, setFilter] = useState('Все');
 
   useEffect(() => {
     if (!user) return;
@@ -45,6 +47,9 @@ export default function LogsPage() {
     }
   };
 
+  const uniqueActions = ['Все', ...Array.from(new Set(logs.map(log => log.action)))];
+  const filteredLogs = filter === 'Все' ? logs : logs.filter(log => log.action === filter);
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -59,6 +64,21 @@ export default function LogsPage() {
         </div>
       </div>
 
+      <div className={styles.filter}>
+        <label htmlFor="actionFilter">Фильтр по действию:</label>
+        <select
+          id="actionFilter"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+        >
+          {uniqueActions.map((action, idx) => (
+            <option key={idx} value={action}>
+              {action}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <table className={styles.table}>
         <thead>
           <tr>
@@ -69,7 +89,7 @@ export default function LogsPage() {
           </tr>
         </thead>
         <tbody>
-          {logs.map((log) => (
+          {filteredLogs.map((log) => (
             <tr key={log.id}>
               <td>{new Date(log.created_at).toLocaleString()}</td>
               <td>{log.user_login}</td>
@@ -82,3 +102,4 @@ export default function LogsPage() {
     </div>
   );
 }
+export default withAdminGuard(LogsPage);

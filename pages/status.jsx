@@ -3,8 +3,9 @@ import { supabase } from '../lib/supabaseClient';
 import { useRouter } from 'next/router';
 import styles from '../styles/Status.module.css';
 import { useUser } from '../context/UserContext'; // 👈 добавили
+import { withAdminGuard } from '../lib/withAdminGuard';
 
-export default function StatusPage() {
+function StatusPage() {
   const [connectionStatus, setConnectionStatus] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const router = useRouter();
@@ -53,3 +54,4 @@ export default function StatusPage() {
     </div>
   );
 }
+export default withAdminGuard(StatusPage);

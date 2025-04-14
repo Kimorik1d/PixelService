@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';  // Подключение к Supabase
 import styles from '../styles/Profiles.module.css';  // CSS модуль для стилизации
 import { useRouter } from 'next/router';
+import { withAdminGuard } from '../lib/withAdminGuard';
 
-export default function Profiles() {
+function Profiles() {
   const [users, setUsers] = useState([]);
   const [newUser, setNewUser] = useState({
     login: '',
@@ -162,3 +163,4 @@ export default function Profiles() {
     </div>
   );
 }
+export default withAdminGuard(Profiles);

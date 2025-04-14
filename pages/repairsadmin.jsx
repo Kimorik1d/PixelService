@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import styles from '../styles/RepairsAdmin.module.css';
 import { useRouter } from 'next/router';
+import { withAdminGuard } from '../lib/withAdminGuard'; // 👈 вот это важно
 
-export default function RepairsAdmin() {
+function RepairsAdminPage() {
   const [repairs, setRepairs] = useState([]);
   const [activeTab, setActiveTab] = useState('Неисправно');
   const router = useRouter();
@@ -184,3 +185,4 @@ export default function RepairsAdmin() {
     </div>
   );
 }
+export default withAdminGuard(RepairsAdminPage);
