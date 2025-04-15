@@ -1,3 +1,5 @@
+
+// OverviewPage.jsx
 import { useUser } from '../context/UserContext';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
@@ -24,9 +26,7 @@ function OverviewPage() {
   const [pcRequests, setPcRequests] = useState([]);
   const [clubStats, setClubStats] = useState({ Неисправно: 0, 'На отправке': 0, 'В ремонте': 0 });
   const [allClubStats, setAllClubStats] = useState({});
-  const [editIds, setEditIds] = useState({});
   const allAddresses = ['Киренского', 'Мира', 'Мартынова', '9 мая', 'Карамзина', 'Лесников', 'Полигон', 'Алексеева'];
-
 
   useEffect(() => {
     if (user === null) return;
@@ -94,28 +94,25 @@ function OverviewPage() {
         'Принято в клубе',
       ]);
     if (error) return;
-  
     const statsByClub = {};
     data.forEach((r) => {
       if (!statsByClub[r.club_address]) {
         statsByClub[r.club_address] = { Неисправно: 0, 'В офисе': 0 };
       }
-  
       if (['Неисправно', 'На отправке', 'У курьера', 'Принято в клубе'].includes(r.status)) {
         statsByClub[r.club_address]['Неисправно']++;
       } else if (['В ремонте', 'Доставка в клуб'].includes(r.status)) {
         statsByClub[r.club_address]['В офисе']++;
       }
     });
-  
     setAllClubStats(statsByClub);
   };
+
   const getCellColor = (count) => {
-    if (count <= 2) return '#4CAF50';      // Зеленый
-    if (count <= 4) return '#FFC107';      // Желтый
-    return '#F44336';                      // Красный
+    if (count <= 2) return '#4CAF50';
+    if (count <= 4) return '#FFC107';
+    return '#F44336';
   };
-  
 
   const fetchActiveRepairs = async (address) => {
     const { data, error } = await supabase
@@ -187,44 +184,113 @@ function OverviewPage() {
     }
   };
 
+  const saveLayoutToDB = async () => {
+    const { error } = await supabase
+      .from('pc_layouts')
+      .upsert({ club_address: selectedAddress, layout });
+    if (error) console.error('Ошибка сохранения макета:', error);
+  };
+
   const handleDragStart = (e, id) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    setOffset({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
+    setOffset({ x: e.clientX - rect.left, y: e.clientY - rect.top });
     setDraggingId(id);
   };
 
-  const pcsInLayout = layout.filter((pc) => pc.type === 'pc').map((pc) => pc.id);
-  const uniqueFaulty = [...new Set(faultyPcs)];
-  const faultyCount = pcsInLayout.filter((id) => uniqueFaulty.includes(id)).length;
-  const workingCount = pcsInLayout.length - faultyCount;
+  const handlePcIdChange = (oldId, newId) => {
+    setLayout((prev) =>
+      prev.map((item) =>
+        item.id === oldId ? { ...item, id: newId } : item
+      )
+    );
+  };
 
-  if (checkingAccess) return null;
+  const handleDeleteItem = (id) => {
+    setLayout((prev) => prev.filter((item) => item.id !== id));
+  };
+
+
+  const renderItem = (item) => {
+    if (item.type === 'label') {
+      return (
+        <div
+          key={item.id}
+          className={styles.labelBox}
+          style={{ left: item.x, top: item.y }}
+          onMouseDown={isEditMode ? (e) => {
+            if (e.target.tagName !== 'INPUT') handleDragStart(e, item.id);
+          } : null}
+        >
+          {isEditMode ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <input
+                value={item.text || ''}
+                onChange={(e) => {
+                  const newText = e.target.value;
+                  setLayout((prev) =>
+                    prev.map((el) => el.id === item.id ? { ...el, text: newText } : el)
+                  );
+                }}
+                className={styles.labelInput}
+              />
+              <button onClick={() => handleDeleteItem(item.id)} style={{ color: 'red' }}>✕</button>
+            </div>
+          ) : (
+            <span>{item.text}</span>
+          )}
+        </div>
+      );
+    }
+
+    const isFaulty = faultyPcs.includes(item.id);
+    return (
+      <div
+        key={item.id}
+        className={`${styles.pcBox} ${isFaulty ? styles.faulty : styles.working}`}
+        style={{ left: item.x, top: item.y, width: 50, height: 40 }}
+        onMouseDown={isEditMode ? (e) => handleDragStart(e, item.id) : null}
+        onClick={!isEditMode ? () => fetchPcRequests(item.id) : undefined}
+        onMouseEnter={() => fetchPcRequests(item.id, true)}
+        onMouseLeave={() => setHoverPcId(null)}
+      >
+        {isEditMode ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <input
+              value={item.id}
+              onChange={(e) => handlePcIdChange(item.id, e.target.value)}
+              className={styles.pcInput}
+              style={{ width: '40px', fontSize: '12px' }}
+            />
+            <button onClick={() => handleDeleteItem(item.id)} style={{ fontSize: '10px', marginTop: '2px', color: 'red', background: 'none', border: 'none', cursor: 'pointer' }}>
+              ✕
+            </button>
+          </div>
+        ) : (
+          <span>{item.id}</span>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className={baseStyles.container}>
+      {/* кнопки навигации */}
       <div style={{ position: 'absolute', top: 20, left: 30, display: 'flex', gap: '10px' }}>
-  <button onClick={() => router.push('/admin')} className={baseStyles.buttonBack}>
-    Главная
-  </button>
-  <button onClick={() => router.push('/repairsadmin')} className={baseStyles.buttonBack}>
-    Таблица
-  </button>
-</div>
+        <button onClick={() => router.push('/admin')} className={baseStyles.buttonBack}>Главная</button>
+        <button onClick={() => router.push('/repairsadmin')} className={baseStyles.buttonBack}>Таблица</button>
+      </div>
 
-  
+      {/* статистика */}
       <div style={{ position: 'absolute', top: 20, right: 30, textAlign: 'right', lineHeight: '1.4' }}>
         <div><strong>Неисправно:</strong> {clubStats['Неисправно']}</div>
         <div><strong>На отправке:</strong> {clubStats['На отправке']}</div>
         <div><strong>В ремонте:</strong> {clubStats['В ремонте']}</div>
       </div>
-  
+
       <h1 className={baseStyles.title}>Состояние ПК по клубам</h1>
-  
+
       <div className={styles.tabs}>
-        {['Все', 'Мира', 'Киренского', 'Мартынова', 'Карамзина', '9 мая', 'Алексеева', 'Полигон', 'Лесников'].map((address) => (
+        {['Все', ...allAddresses].map((address) => (
           <button
             key={address}
             className={`${styles.tabButton} ${selectedAddress === address ? styles.activeTab : ''}`}
@@ -266,50 +332,7 @@ function OverviewPage() {
         </div>
       ) : (
         <div className={styles.canvas}>
-          {layout.map((item) => {
-            if (item.type === 'label') {
-              return (
-                <div
-                  key={item.id}
-                  className={styles.labelBox}
-                  style={{ left: item.x, top: item.y }}
-                  onMouseDown={isEditMode ? (e) => {
-                    if (e.target.tagName !== 'INPUT') handleDragStart(e, item.id);
-                  } : null}
-                >
-                  {isEditMode ? (
-                    <input
-                      value={item.text}
-                      onChange={(e) => {
-                        const newText = e.target.value;
-                        setLayout((prev) =>
-                          prev.map((el) => el.id === item.id ? { ...el, text: newText } : el)
-                        );
-                      }}
-                      className={styles.labelInput}
-                    />
-                  ) : (
-                    <span>{item.text}</span>
-                  )}
-                </div>
-              );
-            }
-  
-            const isFaulty = faultyPcs.includes(item.id);
-            return (
-              <div
-                key={item.id}
-                className={`${styles.pcBox} ${isFaulty ? styles.faulty : styles.working}`}
-                style={{ left: item.x, top: item.y, width: 50, height: 40 }}
-                onMouseDown={isEditMode ? (e) => handleDragStart(e, item.id) : null}
-                onClick={!isEditMode ? () => fetchPcRequests(item.id) : undefined}
-                onMouseEnter={() => fetchPcRequests(item.id, true)}
-                onMouseLeave={() => setHoverPcId(null)}
-              >
-                <span>{item.id}</span>
-              </div>
-            );
-          })}
+      {layout.map(renderItem)}
   
           {hoverPcId && hoverPcRequests.length > 0 && (
             <div
@@ -356,11 +379,46 @@ function OverviewPage() {
       <button onClick={() => setModalVisible(false)}>Закрыть</button>
     </div>
   </div>
+  
 )}
-
+<div style={{ textAlign: 'center', marginTop: '40px', display: 'flex', justifyContent: 'center', gap: '10px' }}>
+        <button
+          onClick={() => {
+            const newLabel = {
+              id: `label-${Date.now()}`,
+              x: 100,
+              y: 100,
+              type: 'label',
+              text: 'Надпись',
+            };
+            setLayout((prev) => [...prev, newLabel]);
+          }}
+          className={baseStyles.button}
+        >
+          ➕ Добавить надпись
+        </button>
+        <button
+          onClick={() => {
+            const newId = (layout.length + 1).toString();
+            const newPc = { id: newId, x: 100, y: 100, type: 'pc' };
+            setLayout((prev) => [...prev, newPc]);
+          }}
+          className={baseStyles.button}
+        >
+          ➕ Добавить ПК
+        </button>
+        <button
+          onClick={() => {
+            if (isEditMode) saveLayoutToDB();
+            setIsEditMode(!isEditMode);
+          }}
+          className={baseStyles.button}
+        >
+          {isEditMode ? 'Сохранить' : 'Редактировать'}
+        </button>
+      </div>
     </div>
   );
-  
 }
 
 export default withAdminGuard(OverviewPage);
