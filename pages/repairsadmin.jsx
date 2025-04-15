@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import styles from '../styles/RepairsAdmin.module.css';
+import baseStyles from '../styles/Status.module.css';
 import { useRouter } from 'next/router';
 import { withAdminGuard } from '../lib/withAdminGuard';
 
@@ -178,12 +179,15 @@ function RepairsAdminPage() {
 
   return (
     <div className={styles.container}>
-      <button
-        onClick={() => router.push('/overview')}
-        className={styles.overviewButton}
-      >
-        Обзор
-      </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+  <button onClick={() => router.push('/admin')} className={baseStyles.buttonBack}>
+    Главная
+  </button>
+  <button onClick={() => router.push('/overview')} className={baseStyles.buttonBack}>
+    Обзор
+  </button>
+</div>
+
 
       <h1 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <span>Администрирование заявок</span>

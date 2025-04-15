@@ -25,6 +25,8 @@ function OverviewPage() {
   const [clubStats, setClubStats] = useState({ Неисправно: 0, 'На отправке': 0, 'В ремонте': 0 });
   const [allClubStats, setAllClubStats] = useState({});
   const [editIds, setEditIds] = useState({});
+  const allAddresses = ['Киренского', 'Мира', 'Мартынова', '9 мая', 'Карамзина', 'Лесников', 'Полигон', 'Алексеева'];
+
 
   useEffect(() => {
     if (user === null) return;
@@ -203,20 +205,24 @@ function OverviewPage() {
 
   return (
     <div className={baseStyles.container}>
-      <div style={{ position: 'absolute', top: 20, left: 30 }}>
-        <button onClick={() => router.push('/repairsadmin')} className={baseStyles.buttonBack}>
-          Таблица
-        </button>
-      </div>
+      <div style={{ position: 'absolute', top: 20, left: 30, display: 'flex', gap: '10px' }}>
+  <button onClick={() => router.push('/admin')} className={baseStyles.buttonBack}>
+    Главная
+  </button>
+  <button onClick={() => router.push('/repairsadmin')} className={baseStyles.buttonBack}>
+    Таблица
+  </button>
+</div>
 
+  
       <div style={{ position: 'absolute', top: 20, right: 30, textAlign: 'right', lineHeight: '1.4' }}>
         <div><strong>Неисправно:</strong> {clubStats['Неисправно']}</div>
         <div><strong>На отправке:</strong> {clubStats['На отправке']}</div>
         <div><strong>В ремонте:</strong> {clubStats['В ремонте']}</div>
       </div>
-
+  
       <h1 className={baseStyles.title}>Состояние ПК по клубам</h1>
-
+  
       <div className={styles.tabs}>
         {['Все', 'Мира', 'Киренского', 'Мартынова', 'Карамзина', '9 мая', 'Алексеева', 'Полигон', 'Лесников'].map((address) => (
           <button
@@ -228,34 +234,36 @@ function OverviewPage() {
           </button>
         ))}
       </div>
-
+  
       {selectedAddress === 'Все' ? (
         <div className={styles.allTable}>
-  <table>
-    <thead>
-      <tr>
-        <th>Клуб</th>
-        <th>Неисправно</th>
-        <th>В офисе</th>
+          <table>
+            <thead>
+              <tr>
+                <th>Клуб</th>
+                <th>Неисправно</th>
+                <th>В офисе</th>
+              </tr>
+            </thead>
+            <tbody>
+  {allAddresses.map((club) => {
+    const stats = allClubStats[club] || { 'Неисправно': 0, 'В офисе': 0 };
+    return (
+      <tr key={club}>
+        <td>{club}</td>
+        <td style={{ color: getCellColor(stats['Неисправно']), fontWeight: 'bold' }}>
+          {stats['Неисправно']}
+        </td>
+        <td style={{ color: getCellColor(stats['В офисе']), fontWeight: 'bold' }}>
+          {stats['В офисе']}
+        </td>
       </tr>
-    </thead>
-    <tbody>
-      {Object.entries(allClubStats).map(([club, stats]) => (
-        <tr key={club}>
-          <td>{club}</td>
-          <td style={{ color: getCellColor(stats['Неисправно']), fontWeight: 'bold' }}>
-            {stats['Неисправно']}
-          </td>
-          <td style={{ color: getCellColor(stats['В офисе']), fontWeight: 'bold' }}>
-            {stats['В офисе']}
-          </td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-</div>
+    );
+  })}
+</tbody>
 
-
+          </table>
+        </div>
       ) : (
         <div className={styles.canvas}>
           {layout.map((item) => {
@@ -286,7 +294,7 @@ function OverviewPage() {
                 </div>
               );
             }
-
+  
             const isFaulty = faultyPcs.includes(item.id);
             return (
               <div
@@ -302,7 +310,7 @@ function OverviewPage() {
               </div>
             );
           })}
-
+  
           {hoverPcId && hoverPcRequests.length > 0 && (
             <div
               className={styles.hoverCard}
@@ -322,8 +330,37 @@ function OverviewPage() {
           )}
         </div>
       )}
+  
+      {/* Модальное окно с заявками на ПК */}
+      {modalVisible && (
+  <div className={styles.modalOverlay} onClick={() => setModalVisible(false)}>
+    <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+      <h2>Заявки на ПК {modalPcId}</h2>
+      {pcRequests.length === 0 ? (
+        <p>Нет активных заявок</p>
+      ) : (
+        <ul>
+          {pcRequests.map((r) => (
+            <li key={r.id} style={{ marginBottom: '1em' }}>
+            <div><strong>ID:</strong> {r.id}</div>
+            <div><strong>Статус:</strong> {r.status}</div>
+            <div><strong>Тип:</strong> {r.equipment_type}</div>
+            <div><strong>Модель:</strong> {r.equipment_model}</div>
+            <div><strong>Описание:</strong> {r.description || '—'}</div>
+            <div><strong>Создано:</strong> {new Date(new Date(r.created_at).getTime() + 7 * 60 * 60 * 1000).toLocaleString('ru-RU')}</div>
+          </li>
+          
+          ))}
+        </ul>
+      )}
+      <button onClick={() => setModalVisible(false)}>Закрыть</button>
+    </div>
+  </div>
+)}
+
     </div>
   );
+  
 }
 
 export default withAdminGuard(OverviewPage);
