@@ -1,5 +1,3 @@
-/* Внесите изменения в Index.module.css */
-
 .container {
   min-height: 100vh;
   display: flex;
@@ -10,58 +8,70 @@
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
-  color: white; /* Цвет текста для контраста */
+  color: white;
   padding: 20px;
+  text-align: center;
 }
 
 .heroSection {
-  text-align: center;
   margin-bottom: 40px;
+  padding: 0 10px;
 }
 
 .title {
   font-size: 2.5rem;
   margin: 0;
+  word-break: break-word;
 }
 
 .topLeft {
   position: absolute;
   top: 20px;
   left: 20px;
+  text-align: left;
+  max-width: 90vw;
 }
 
 .mainContent {
   text-align: center;
+  width: 100%;
 }
 
 .buttonContainer {
   margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  align-items: center;
 }
 
 .button {
-  margin: 10px;
-  padding: 10px 20px;
+  padding: 12px 20px;
   font-size: 1rem;
   cursor: pointer;
+  width: 90%;
+  max-width: 280px;
 }
 
 .buttonAdmin {
-  padding: 10px 20px;
+  padding: 12px 20px;
   background-color: #f0f0f0;
   color: #333;
   border: 1px solid #ccc;
   border-radius: 6px;
   cursor: pointer;
   font-weight: bold;
+  width: 90%;
+  max-width: 280px;
 }
-
 
 .userInfo {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   color: white;
+  margin-bottom: 10px;
+  word-break: break-word;
 }
 
-/* Логотип в левом нижнем углу */
 .logoContainer {
   position: absolute;
   bottom: 1px;
@@ -70,7 +80,7 @@
 }
 
 .logo {
-  max-width: 200px; /* Ограничиваем размер логотипа */
+  max-width: 150px;
   height: auto;
 }
 
@@ -79,11 +89,14 @@
   bottom: 10px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 1.2rem;
-  color: #666;
+  font-size: 1rem;
+  color: #ccc;
   z-index: 999;
   text-align: center;
+  padding: 5px;
+  width: 100%;
 }
+
 .bottomRightAdmin {
   position: fixed;
   bottom: 20px;
@@ -95,9 +108,52 @@
   bottom: 20px;
   right: 20px;
 }
+
 .bottomCenter {
   display: flex;
+  flex-direction: column;
   justify-content: center;
-  gap: 20px;
+  gap: 15px;
   margin-top: 20px;
+  align-items: center;
+  width: 100%;
+}
+
+/* --- Адаптация для экранов шириной до 600px --- */
+@media (max-width: 600px) {
+  .title {
+    font-size: 1.8rem;
+  }
+
+  .button,
+  .buttonAdmin {
+    font-size: 0.95rem;
+    padding: 10px;
+  }
+
+  .topLeft {
+    position: static;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+
+  .bottomRightAdmin,
+  .bottomRightCourier {
+    position: static;
+    margin-top: 10px;
+  }
+
+  .bottomCenter {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .logoContainer {
+    position: static;
+    margin-top: 20px;
+  }
+
+  .logo {
+    max-width: 120px;
+  }
 }

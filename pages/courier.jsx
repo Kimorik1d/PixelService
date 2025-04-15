@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import styles from '../styles/Repairs.module.css';
+import styles from '../styles/Courier.module.css';
 import { useRouter } from 'next/router';
 import { useUser } from '../context/UserContext';
 

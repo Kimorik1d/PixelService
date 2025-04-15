@@ -96,13 +96,7 @@ export default function Home() {
         )}
       </div>
 
-      <div className={styles.logoContainer}>
-        <img
-          src="/images/logo.jpg"
-          alt="Logo"
-          className={styles.logo}
-        />
-      </div>
+      
     </div>
   );
 }
