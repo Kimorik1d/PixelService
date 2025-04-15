@@ -24,9 +24,11 @@
 }
 
 .table {
-  table-layout: fixed;
   width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
 }
+
 
 
 .table th, .table td {
@@ -46,7 +48,11 @@
 .table select {
   padding: 5px;
   border-radius: 4px;
+  background-color: transparent !important;
+  color: black;
+  font-weight: bold;
 }
+
 
 .statusBadge {
   padding: 4px 8px;
@@ -114,4 +120,42 @@
   background-color: #0056b3;
   color: white;
   font-weight: bold;
+}
+.statusCell {
+  padding: 4px;
+  text-align: center;
+  font-weight: bold;
+  color: black;
+}
+
+.statusYellow {
+  background-color: #FFD700;
+}
+
+.statusBlue {
+  background-color: #87CEFA;
+}
+
+.statusRed {
+  background-color: #FA8072;
+}
+
+.statusGreen {
+  background-color: #90EE90;
+}
+.overviewButton {
+  position: absolute;
+  top: 20px;
+  left: 30px;
+  padding: 16px 34px;
+  background-color: #127beb;
+  color: rgb(255, 255, 255);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.overviewButton:hover {
+  background-color: #388e3c;
 }

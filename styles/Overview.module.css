@@ -175,7 +175,7 @@
     width: 90%;
     color: white;
     max-height: 80vh;
-    overflow-y: auto;
+    overflow-y: fixed;
   }
   
   .modalActions {
@@ -229,4 +229,95 @@
     outline: none;
     color: white;
   }
+  .hoverCard {
+    position: absolute;
+    transform: translate(-50%, -100%);
+    background-color: rgb(48, 48, 48);
+    border: 1px solid #ccc;
+    padding: 10px;
+    z-index: 999;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    border-radius: 6px;
+    font-size: 12px;
+    max-width: 200px;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .allTable {
+    margin-top: 20px;
+    overflow-x: fixed;
+  }
+  
+  .allTable table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .allTable th,
+  .allTable td {
+    border: 1px solid #ccc;
+    padding: 8px 12px;
+    text-align: left;
+  }
+  
+  .allTable th {
+    background-color: #303030;
+  }
+  .tabsFixed {
+    position: sticky;
+    top: 80px; /* отступ от верха страницы (настрой под шапку) */
+    background-color: white;
+    z-index: 10;
+    padding: 10px 0;
+    border-bottom: 1px solid #ddd;
+  }
+  .tabsSticky {
+    position: sticky;
+    top: 80px; /* регулируется под шапку */
+    background-color: white;
+    z-index: 100;
+    padding: 10px 0;
+    border-bottom: 1px solid #ccc;
+  }
+  .stickyTitle {
+    position: sticky;
+    top: 40px; /* чуть выше вкладок */
+    background-color: white;
+    z-index: 101;
+    padding: 10px 0;
+  }
+  .headerSticky {
+    position: sticky;
+    top: 5px;
+    background-color: white;
+    z-index: 100;
+    padding: 20px;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .tabsSticky {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .fixedHeader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background-color: white;
+    z-index: 999;
+    padding: 20px;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .fixedHeader h1 {
+    margin: 0 0 10px 0;
+  }
+  
+  .pageContent {
+    margin-top: 130px; /* отступ под фиксированный хедер */
+  }
+  
   
