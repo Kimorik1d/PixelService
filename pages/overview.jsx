@@ -109,8 +109,8 @@ function OverviewPage() {
   };
 
   const getCellColor = (count) => {
-    if (count <= 2) return '#4CAF50';
-    if (count <= 4) return '#FFC107';
+    if (count == 0) return '#4CAF50';
+    if (count >= 1) return '#FFC107';
     return '#F44336';
   };
 

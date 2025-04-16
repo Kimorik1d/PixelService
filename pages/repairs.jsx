@@ -123,18 +123,25 @@ export default function RepairsPage() {
     );
   };
 
-  const renderStatusBadge = (status) => {
+  const renderStatusBadge = (repair) => {
+    const { status, approved } = repair;
+  
     const statusClass =
       status === 'Неисправно' ? styles.statusPending :
       status === 'У курьера' ? styles.statusCourier :
       status === 'В ремонте' ? styles.statusInRepair :
       styles.statusClosed;
+  
     return (
-      <span className={`${styles.statusBadge} ${statusClass}`} style={{ whiteSpace: 'nowrap' }}>
+      <span className={`${styles.statusBadge} ${statusClass}`} style={{ whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
         {status}
+        {activeTab === 'На отправке' && status === 'У курьера' && approved && (
+          <span style={{ color: 'green' }}>✔</span>
+        )}
       </span>
     );
   };
+  
 
   const formatDateTime = (isoString) => {
     const date = new Date(isoString);
@@ -186,7 +193,7 @@ export default function RepairsPage() {
               <td>{formatDateTime(repair.created_at)}</td>
               {title !== 'Ожидание' && title !== 'На отправке' && <td>{repair.sent_at ? formatDateTime(repair.sent_at) : ''}</td>}
               {title !== 'Ожидание' && title !== 'На отправке' && title !== 'В ремонте' && title !== 'На получение' && <td>{repair.closed_at ? formatDateTime(repair.closed_at) : ''}</td>}
-              <td>{renderStatusBadge(repair.status)}</td>
+              <td>{renderStatusBadge(repair)}</td>
               {title !== 'История' && <td>{actions(repair)}</td>}
             </tr>
           ))}
@@ -210,23 +217,47 @@ export default function RepairsPage() {
   };
 
   const renderActions = (repair) => {
+    const confirmAndUpdate = (id, newStatus, message) => {
+      if (window.confirm(message)) {
+        updateStatus(id, newStatus);
+      }
+    };
+  
     if (user?.role === 'courier' && activeTab === 'На отправке' && repair.status === 'На отправке') {
-      return <button onClick={() => updateStatus(repair.id, 'У курьера')}>Передано</button>;
+      return (
+        <button onClick={() => confirmAndUpdate(repair.id, 'У курьера', `Подтвердите передачу заявки ID ${repair.id} курьеру.`)}>
+          Передано
+        </button>
+      );
     }
+  
     if (activeTab === 'Ожидание') {
-      return <button onClick={() => updateStatus(repair.id, 'На отправке')}>Отправлено</button>;
+      return (
+        <button onClick={() => confirmAndUpdate(repair.id, 'На отправке', `Подтвердите отправку заявки ID ${repair.id}.`)}>
+          Отметить
+        </button>
+      );
     }
+  
     if (activeTab === 'На отправке' && repair.status === 'На отправке') {
-      return <button onClick={() => updateStatus(repair.id, 'У курьера')}>Передано</button>;
+      return (
+        <button onClick={() => confirmAndUpdate(repair.id, 'У курьера', `Подтвердите передачу заявки ID ${repair.id} курьеру.`)}>
+          Передано
+        </button>
+      );
     }
-    if (activeTab === 'В ремонте') {
-      return <button onClick={() => updateStatus(repair.id, 'Закрыт')}>Закрыть</button>;
-    }
+  
     if (activeTab === 'На получение' && repair.status === 'Доставка в клуб') {
-      return <button onClick={() => updateStatus(repair.id, 'Принято в клубе')}>Принято</button>;
+      return (
+        <button onClick={() => confirmAndUpdate(repair.id, 'Принято в клубе', `Подтвердите приём заявки ID ${repair.id} в клубе.`)}>
+          Принято
+        </button>
+      );
     }
+  
     return null;
   };
+  
 
   const statusCounts = {
     'Ожидание': filteredRepairs.filter((r) => r.status === 'Неисправно').length,

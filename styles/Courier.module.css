@@ -121,37 +121,38 @@
     margin-top: 2rem;
   }
   
-  /* Адаптация под мобильные */
   @media (max-width: 768px) {
-    .title {
-      font-size: 1.5rem;
-    }
-  
-    .subtitle {
-      font-size: 1.1rem;
-    }
-  
-    .mainTab,
-    .clubTab,
-    .confirmButton,
-    .returnButton,
-    .backButton {
-      font-size: 0.85rem;
-      padding: 6px 8px;
-    }
-  
-    .table {
-      font-size: 0.8rem;
-    }
-  
-    .table th,
-    .table td {
-      padding: 6px;
+    .table th:nth-child(1),
+    .table th:nth-child(2),
+    .table th:nth-child(3),
+    .table th:nth-child(6),
+    .table th:nth-child(7),
+    .table td:nth-child(1),
+    .table td:nth-child(2),
+    .table td:nth-child(3),
+    .table td:nth-child(6),
+    .table td:nth-child(7) {
+      display: none;
     }
   
     .clubTabContainer {
-      flex-direction: column;
+      display: none;
+    }
+  
+    .clubSelectWrapper {
+      margin: 10px 0;
+      display: flex;
       align-items: center;
+      gap: 10px;
+    }
+  
+    .clubSelectLabel {
+      font-weight: bold;
+    }
+  
+    .clubSelect {
+      flex-grow: 1;
+      padding: 4px;
     }
   }
   

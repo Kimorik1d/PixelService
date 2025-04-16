@@ -4,6 +4,7 @@ import styles from '../styles/RepairsAdmin.module.css';
 import baseStyles from '../styles/Status.module.css';
 import { useRouter } from 'next/router';
 import { withAdminGuard } from '../lib/withAdminGuard';
+import { useUser } from '../context/UserContext';
 
 function RepairsAdminPage() {
   const [repairs, setRepairs] = useState([]);
@@ -16,6 +17,9 @@ function RepairsAdminPage() {
     'Киренского', 'Карамзина', 'Лесников', 'Мира',
     'Мартынова', 'Алексеева', 'Полигон', '9 мая'
   ];
+
+  const { user } = useUser();
+
 
   const statusTabs = [
     { label: 'Все', value: 'Все' },
@@ -38,20 +42,21 @@ function RepairsAdminPage() {
   };
 
   useEffect(() => {
-    fetchRepairs();
-
+    fetchRepairs(); // 👈 сразу загружаем данные при открытии
+  
     const interval = setInterval(() => {
-      fetchRepairs();
+      fetchRepairs(); // 👈 затем каждые 5 секунд
     }, 5000);
-
+  
     return () => clearInterval(interval);
   }, []);
+  
+  
 
   useEffect(() => {
-    const savedTab = localStorage.getItem('activeTab');
-    const savedAddress = localStorage.getItem('selectedAddress');
-    if (savedTab) setActiveTab(savedTab);
-    if (savedAddress) setSelectedAddress(savedAddress);
+    const saved = localStorage.getItem('overviewAddress');
+    if (saved) setSelectedAddress(saved);
+    else setSelectedAddress('Все');
   }, []);
 
   const handleTabChange = (value) => {
@@ -59,10 +64,11 @@ function RepairsAdminPage() {
     localStorage.setItem('activeTab', value);
   };
 
-  const handleAddressChange = (value) => {
-    setSelectedAddress(value);
-    localStorage.setItem('selectedAddress', value);
+  const handleSelectAddress = (address) => {
+    setSelectedAddress(address);
+    localStorage.setItem('overviewAddress', address);
   };
+  
 
   const filteredRepairs = repairs.filter((repair) => {
     const matchesStatus =
@@ -80,16 +86,16 @@ function RepairsAdminPage() {
 
   const handleStatusChange = async (repairId, newStatus) => {
     const updateData = { status: newStatus };
-
+  
     if (newStatus === 'В ремонте') {
       updateData.sent_at = new Date().toISOString();
     }
-
+  
     const { error } = await supabase
       .from('repairs')
       .update(updateData)
       .eq('id', repairId);
-
+  
     if (error) {
       console.error('Ошибка при обновлении статуса:', error);
     } else {
@@ -98,8 +104,18 @@ function RepairsAdminPage() {
           repair.id === repairId ? { ...repair, ...updateData } : repair
         )
       );
+  
+      // логирование действия
+      await supabase.from('logs').insert([
+        {
+          user_login: user?.login || 'неизвестно',
+          action: 'Изменение статуса заявки',
+          details: `ID: ${repairId}, новый статус: ${newStatus}`,
+        }
+      ]);
     }
   };
+  
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -188,37 +204,61 @@ function RepairsAdminPage() {
   </button>
 </div>
 
-
+<h1 className={styles.pageTitle}>Администрирование заявок</h1>
       <h1 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-        <span>Администрирование заявок</span>
-        <div className={styles.indicators} style={{ textAlign: 'right' }}>
-          <p>Неисправно: {repairs.filter(r => r.status === 'Неисправно' && (!selectedAddress || r.club_address === selectedAddress)).length}</p>
-          <p>Ожидание: {repairs.filter(r => (r.status === 'На отправке' || r.status === 'У курьера') && (!selectedAddress || r.club_address === selectedAddress)).length}</p>
-          <p>В офисе: {repairs.filter(r => r.status === 'В ремонте' && (!selectedAddress || r.club_address === selectedAddress)).length}</p>
-        </div>
+      <div className={styles.indicatorRow}>
+  <div className={styles.indicator}>Неисправно: {repairs.filter(r => r.status === 'Неисправно' && (!selectedAddress || r.club_address === selectedAddress)).length}</div>
+  <div className={styles.indicator}>Доставка: {repairs.filter(r => (r.status === 'На отправке' || r.status === 'У курьера') && (!selectedAddress || r.club_address === selectedAddress)).length}</div>
+  <div className={styles.indicator}>В офисе: {repairs.filter(r => r.status === 'В ремонте' && (!selectedAddress || r.club_address === selectedAddress)).length}</div>
+</div>
       </h1>
 
       <div className={styles.tabs}>
-        {statusTabs.map((tab) => (
-          <button
-            key={tab.value}
-            className={`${styles.tabButton} ${activeTab === tab.value ? styles.activeTab : ''}`}
-            onClick={() => handleTabChange(tab.value)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+  {statusTabs.map((tab) => {
+    const count = repairs.filter((r) => {
+      const matchesAddress = selectedAddress === 'Все' || selectedAddress === '' || r.club_address === selectedAddress;
+      if (!matchesAddress) return false;
+
+      switch (tab.value) {
+        case 'Все':
+          return r.status !== 'Закрыт';
+        case 'Неисправно':
+          return r.status === 'Неисправно';
+        case 'Ожидание':
+          return r.status === 'На отправке' || r.status === 'У курьера';
+        case 'В офисе':
+          return r.status === 'В ремонте';
+        case 'Доставка':
+          return r.status === 'Доставка в клуб' || r.status === 'Принято в клубе';
+        case 'Закрыт':
+          return r.status === 'Закрыт';
+        default:
+          return false;
+      }
+    }).length;
+
+    return (
+      <button
+        key={tab.value}
+        className={`${styles.tabButton} ${activeTab === tab.value ? styles.activeTab : ''}`}
+        onClick={() => handleTabChange(tab.value)}
+      >
+        {tab.label} ({count})
+      </button>
+    );
+  })}
+</div>
 
       <div className={styles.tabs}>
         {addressTabs.map((address) => (
           <button
-            key={address}
-            className={`${styles.tabButton} ${selectedAddress === address ? styles.activeTab : ''}`}
-            onClick={() => handleAddressChange(address)}
-          >
-            {address}
-          </button>
+          key={address}
+          className={`${styles.tabButton} ${selectedAddress === address ? styles.activeTab : ''}`}
+          onClick={() => handleSelectAddress(address)}
+        >
+          {address}
+        </button>
+        
         ))}
       </div>
 
