@@ -15,6 +15,9 @@ export default function CreateRepair() {
   const [models, setModels] = useState([]);
   const [selectedModel, setSelectedModel] = useState('');
 
+  const [pcNumberError, setPcNumberError] = useState('');
+  const [descriptionError, setDescriptionError] = useState('');
+
   useEffect(() => {
     if (user?.club_address) {
       fetchEquipmentTypes();
@@ -89,8 +92,29 @@ export default function CreateRepair() {
     }
   };
 
+  const handlePcNumberChange = (value) => {
+    setPcNumber(value);
+    const valid = /^([0-9]{1,2}|PS5|PS4)$/i.test(value.trim());
+    setPcNumberError(valid ? '' : 'Введите число от 0 до 99 или PS4 / PS5');
+  };
+
+  const handleDescriptionChange = (value) => {
+    setDescription(value);
+    if (value.length > 80) {
+      setDescriptionError('Максимум 80 символов');
+    } else {
+      setDescriptionError('');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (pcNumberError || descriptionError) {
+      alert('Проверьте правильность введённых данных.');
+      return;
+    }
+
     try {
       const timeZoneOffset = new Date().toLocaleString('en-US', { timeZone: 'Asia/Krasnoyarsk' });
       const localCreatedAt = new Date(timeZoneOffset).toISOString();
@@ -140,10 +164,11 @@ export default function CreateRepair() {
           <input
             type="text"
             value={pcNumber}
-            onChange={(e) => setPcNumber(e.target.value)}
+            onChange={(e) => handlePcNumberChange(e.target.value)}
             className={styles.input}
             required
           />
+          {pcNumberError && <div className={styles.error}>{pcNumberError}</div>}
         </div>
 
         <div className={styles.formGroup}>
@@ -185,10 +210,15 @@ export default function CreateRepair() {
           <label className={styles.label}>Описание:</label>
           <textarea
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e) => handleDescriptionChange(e.target.value)}
             className={styles.textarea}
+            maxLength={90}
             required
           />
+          <div className={styles.charCounter}>
+            {description.length}/80
+          </div>
+          {descriptionError && <div className={styles.error}>{descriptionError}</div>}
         </div>
 
         <div className={styles.buttonGroup}>

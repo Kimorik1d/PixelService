@@ -97,13 +97,32 @@ export default function RepairsPage() {
   const renderPcNumberCell = (r, editable) => {
     if (!editable) return <span>{r.pc_number}</span>;
     const value = pcNumbers[r.id] || '';
+
+    const isValid = (val) => {
+      const int = parseInt(val, 10);
+      return (
+        (!isNaN(int) && int >= 0 && int <= 99 && /^\d+$/.test(val)) ||
+        val === 'PS5' || val === 'PS4'
+      );
+    };
+
+    const handleBlur = () => {
+      if (r.pc_number === value) return;
+      if (!isValid(value)) {
+        showToast('Некорректный номер ПК. Укажите число от 0 до 99 или PS4/PS5.');
+        setPcNumbers(prev => ({ ...prev, [r.id]: r.pc_number }));
+        return;
+      }
+      updatePcNumber(r.id, value);
+    };
+
     return (
       <input
         type="text"
         value={value}
         className={styles.inputInline}
         onChange={e => setPcNumbers(prev => ({ ...prev, [r.id]: e.target.value }))}
-        onBlur={() => r.pc_number !== value && updatePcNumber(r.id, value)}
+        onBlur={handleBlur}
       />
     );
   };
@@ -111,16 +130,25 @@ export default function RepairsPage() {
   const renderDescriptionCell = (r, editable) => {
     if (!editable) return <span style={{ whiteSpace: 'pre-wrap' }}>{r.description}</span>;
     const value = descriptions[r.id] || '';
+
+    const handleBlur = () => {
+      const trimmed = value.slice(0, 80);
+      if (r.description === trimmed) return;
+      updateDescription(r.id, trimmed);
+    };
+
     return (
       <textarea
         value={value}
         className={styles.inputInline}
+        maxLength={80}
         style={{ width: '100%', resize: 'vertical', minHeight: '40px', whiteSpace: 'pre-wrap' }}
         onChange={e => setDescriptions(prev => ({ ...prev, [r.id]: e.target.value }))}
-        onBlur={() => r.description !== value && updateDescription(r.id, value)}
+        onBlur={handleBlur}
       />
     );
   };
+
 
   // Цветные бейджи статуса, с галочкой для approved
   const renderStatusBadge = (r) => {

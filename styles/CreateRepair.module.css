@@ -70,3 +70,14 @@
 .secondaryButton:hover {
   background-color: #d5d5d5;
 }
+.error {
+  color: red;
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+
+.charCounter {
+  font-size: 0.85rem;
+  text-align: right;
+  color: #666;
+}
