@@ -56,22 +56,30 @@ export default function Home() {
       </div>
 
       <div className={styles.mainContent}>
-        <div className={styles.buttonContainer}>
-          <button
-            className={styles.button}
-            onClick={handleCreateRequest}
-            disabled={!user}
-          >
-            Создать заявку
-          </button>
-          <button
-            className={styles.button}
-            onClick={handleViewRepairs}
-            disabled={!user}
-          >
-            Просмотр заявок
-          </button>
-        </div>
+      <div className={styles.buttonContainer}>
+  <button
+    className={styles.button}
+    onClick={handleCreateRequest}
+    disabled={!user}
+  >
+    Создать заявку
+  </button>
+  <button
+    className={styles.button}
+    onClick={handleViewRepairs}
+    disabled={!user}
+  >
+    Просмотр заявок
+  </button>
+  <button
+    className={styles.button}
+    onClick={() => router.push('/cards')}
+    disabled={!user}
+  >
+    Состояние клуба
+  </button>
+</div>
+
 
         {/* Центрированные кнопки под действиями */}
         {user && (user.role === 'admin' || user.role === 'courier') && (

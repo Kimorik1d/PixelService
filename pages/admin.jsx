@@ -49,6 +49,13 @@ function AdminPage() {
         >
           Статус
         </button>
+        <button
+  className={`${styles.button} ${styles.buttonCards}`}
+  onClick={() => router.push('/cardsadmin')}
+>
+  Состояние клуба
+</button>
+
 
         <button
           className={`${styles.button} ${styles.buttonHome}`}
