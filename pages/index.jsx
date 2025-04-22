@@ -62,7 +62,7 @@ export default function Home() {
     onClick={handleCreateRequest}
     disabled={!user}
   >
-    Создать заявку
+    Создать заявку по ПК/PS
   </button>
   <button
     className={styles.button}
@@ -76,7 +76,7 @@ export default function Home() {
     onClick={() => router.push('/cards')}
     disabled={!user}
   >
-    Состояние клуба
+    Состояние клуба по креслам/ремонту
   </button>
 </div>
 

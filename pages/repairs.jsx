@@ -11,6 +11,9 @@ export default function RepairsPage() {
   const [activeTab, setActiveTab] = useState('Ожидание');
   const { user } = useUser();
   const router = useRouter();
+  const [showHint, setShowHint] = useState(false);
+  const [sortOrder, setSortOrder] = useState('desc'); // 'desc' = сначала новые, 'asc' = сначала старые
+
 
   const [toasts, setToasts] = useState([]);
   const previousRepairsRef = useRef([]);
@@ -249,16 +252,46 @@ export default function RepairsPage() {
     <div className={styles.container}>
       <div className={styles.header}>
         <h1 className={styles.title}>Список заявок</h1>
-        <div className={styles.statusSummary}>
-          <span><strong>Ожидание:</strong> {byTab['Ожидание'].length}</span>
-          <span><strong>На отправке:</strong> {byTab['На отправке'].length}</span>
-          <span><strong>В ремонте:</strong> {byTab['В ремонте'].length}</span>
+        {showHint && (
+          <div className={styles.statusHint}>
+            <p><strong>Статусы заявок:</strong></p>
+            <ul>
+              <li><strong>Неисправно</strong> — дистанционная проблема или пока не требует отправки.</li>
+              <li><strong>На отправке</strong> — заявка отмечена на передачу курьеру.</li>
+              <li><strong>У курьера</strong> — оборудование находится у курьера.</li>
+              <li><strong>В ремонте</strong> — оборудование в ремонте в офисе.</li>
+              <li><strong>Доставка в клуб</strong> — оборудование находится у курьера на доставке в клуб.</li>
+              <li><strong>Принято в клубе</strong> — оборудование принято от курьера в клубе.</li>
+              <li><strong>Закрыт</strong> — заявка завершена.</li>
+            </ul>
+          </div>
+        )}
+      </div>
+  
+      {/* Первый ряд */}
+      <div className={styles.topRow}>
+        <button className={styles.backButton} onClick={() => router.push('/')}>На главную</button>
+  
+        <button className={styles.toggleHintButton} onClick={() => setShowHint(prev => !prev)}>
+          {showHint ? 'Скрыть подсказку' : 'Показать подсказку'}
+        </button>
+  
+        <div className={styles.sortControls}>
+          <label htmlFor="sortSelect" style={{ marginRight: '8px' }}>Сортировка:</label>
+          <select
+            id="sortSelect"
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value)}
+            className={styles.sortSelect}
+          >
+            <option value="desc">Сначала новые</option>
+            <option value="asc">Сначала старые</option>
+          </select>
         </div>
       </div>
-
-      <button className={styles.backButton} onClick={() => router.push('/')}>На главную</button>
-
-      <div className={styles.tabs}>
+  
+      {/* Второй ряд */}
+      <div className={styles.tabRow}>
         {tabs.map(tab => (
           <button
             key={tab}
@@ -269,9 +302,18 @@ export default function RepairsPage() {
           </button>
         ))}
       </div>
-
-      {renderTable(activeTab, byTab[activeTab])}
-
+  
+      {/* Таблица */}
+      {renderTable(
+        activeTab,
+        [...byTab[activeTab]].sort((a, b) => {
+          const aTime = new Date(a.created_at).getTime();
+          const bTime = new Date(b.created_at).getTime();
+          return sortOrder === 'asc' ? aTime - bTime : bTime - aTime;
+        })
+      )}
+  
+      {/* Тосты */}
       <div className={styles.toastContainer}>
         {toasts.map(t => (
           <div key={t.id} className={styles.toast}>{t.message}</div>

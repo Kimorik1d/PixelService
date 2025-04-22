@@ -14,6 +14,8 @@ export default function CreateRepair() {
   const [selectedTypeId, setSelectedTypeId] = useState('');
   const [models, setModels] = useState([]);
   const [selectedModel, setSelectedModel] = useState('');
+  const [showHint, setShowHint] = useState(true);
+
 
   const [pcNumberError, setPcNumberError] = useState('');
   const [descriptionError, setDescriptionError] = useState('');
@@ -158,6 +160,23 @@ export default function CreateRepair() {
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>Создание заявки</h1>
+
+<button className={styles.toggleHintButton} onClick={() => setShowHint(prev => !prev)}>
+  {showHint ? 'Скрыть подсказку' : 'Показать подсказку'}
+</button>
+
+{showHint && (
+  <div className={styles.statusHint}>
+    <p><strong>Номера ПК которые можно писать:</strong></p>
+    <ul>
+      <li><strong>0</strong> — админский рабочий ПК.</li>
+      <li><strong>1-99</strong> — номера игровых ПК.</li>
+      <li><strong>PS4</strong> — playstation 4</li>
+      <li><strong>PS5</strong> — playstation 5</li>
+    </ul>
+  </div>
+)}
+
       <form onSubmit={handleSubmit}>
         <div className={styles.formGroup}>
           <label className={styles.label}>Номер ПК:</label>

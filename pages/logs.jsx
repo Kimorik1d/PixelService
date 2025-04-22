@@ -9,7 +9,9 @@ function LogsPage() {
   const { user } = useUser();
   const router = useRouter();
   const [logs, setLogs] = useState([]);
-  const [filter, setFilter] = useState('Все');
+  const [actionFilter, setActionFilter] = useState('Все');
+  const [userFilter, setUserFilter] = useState('Все');
+  
 
   useEffect(() => {
     if (!user) return;
@@ -48,7 +50,13 @@ function LogsPage() {
   };
 
   const uniqueActions = ['Все', ...Array.from(new Set(logs.map(log => log.action)))];
-  const filteredLogs = filter === 'Все' ? logs : logs.filter(log => log.action === filter);
+  const uniqueUsers = ['Все', ...Array.from(new Set(logs.map(log => log.user_login)))];
+
+  const filteredLogs = logs.filter(log => {
+    const actionMatch = actionFilter === 'Все' || log.action === actionFilter;
+    const userMatch = userFilter === 'Все' || log.user_login === userFilter;
+    return actionMatch && userMatch;
+  });
 
   return (
     <div className={styles.container}>
@@ -68,12 +76,25 @@ function LogsPage() {
         <label htmlFor="actionFilter">Фильтр по действию:</label>
         <select
           id="actionFilter"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
+          value={actionFilter}
+          onChange={(e) => setActionFilter(e.target.value)}
         >
           {uniqueActions.map((action, idx) => (
             <option key={idx} value={action}>
               {action}
+            </option>
+          ))}
+        </select>
+
+        <label htmlFor="userFilter" style={{ marginLeft: '20px' }}>Фильтр по пользователю:</label>
+        <select
+          id="userFilter"
+          value={userFilter}
+          onChange={(e) => setUserFilter(e.target.value)}
+        >
+          {uniqueUsers.map((login, idx) => (
+            <option key={idx} value={login}>
+              {login}
             </option>
           ))}
         </select>
